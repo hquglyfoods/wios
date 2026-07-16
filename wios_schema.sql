@@ -330,12 +330,18 @@ begin
         instance_id, id, aud, role, email,
         encrypted_password, email_confirmed_at,
         raw_app_meta_data, raw_user_meta_data,
+        confirmation_token, recovery_token, email_change,
+        email_change_token_new, email_change_token_current,
+        phone_change, phone_change_token, reauthentication_token,
         created_at, updated_at
       ) values (
         '00000000-0000-0000-0000-000000000000', uid, 'authenticated', 'authenticated', lower(r.email),
         crypt('Djrmffl202!', gen_salt('bf')), now(),
         jsonb_build_object('provider','email','providers', array['email']),
         jsonb_build_object('name', r.name),
+        '', '', '',
+        '', '',
+        '', '', '',
         now(), now()
       );
 
@@ -343,7 +349,7 @@ begin
       insert into auth.identities (
         provider_id, user_id, identity_data, provider, created_at, updated_at, last_sign_in_at
       ) values (
-        uid, uid,
+        uid::text, uid,
         jsonb_build_object('sub', uid::text, 'email', lower(r.email), 'email_verified', true),
         'email', now(), now(), now()
       );

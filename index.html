@@ -414,7 +414,13 @@ function Login(){
     if(busy||!uid.trim()||!pw) return;
     setBusy(true); setErr('');
     const {error}=await sb.auth.signInWithPassword({email:toEmail(uid), password:pw});
-    if(error) setErr('That ID or password did not work. Check and try again.');
+    if(error){
+      const m=(error.message||'').toLowerCase();
+      if(m.includes('invalid login')||m.includes('credentials'))
+        setErr('That ID or password did not work. Check and try again.');
+      else
+        setErr(error.message||'Could not sign in.');   // show the real reason for anything else
+    }
     setBusy(false);
   }
   async function recover(){
