@@ -303,8 +303,9 @@ button{cursor:pointer;border:none;background:none;padding:0;}
 .gsbody{font-size:13px;color:var(--text);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
 /* add task / add coop row */
-.addrow{display:flex;gap:8px;margin:-2px 0 12px;}
-.addbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;}
+.addrow{display:flex;gap:10px;margin:0 0 14px;}
+.addbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:600;}
+.addbtn svg{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
 .addbtn svg{width:17px;height:17px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
 
 /* coop card inside tasks */
@@ -587,8 +588,11 @@ function TasksTab({me, people, tasks, coops, members, goals, reload, openCoopId,
   const [dNotes,setDNotes]=useState('');
   const [dSubs,setDSubs]=useState([]);
   const [newSub,setNewSub]=useState('');
-  const [showAdd,setShowAdd]=useState(false);        // +task / +coop chooser
+  const [showAdd,setShowAdd]=useState(false);        // legacy chooser (unused now)
   const [showNewCoop,setShowNewCoop]=useState(false);
+  const [showNewTask,setShowNewTask]=useState(false);
+  const [newTaskTitle,setNewTaskTitle]=useState('');
+  const [newTaskUrgent,setNewTaskUrgent]=useState(false);
   const [declining,setDeclining]=useState(null); const [declineMsg,setDeclineMsg]=useState('');
 
   const cLabel=id=>{ const p=people.find(x=>x.id===id); return p?`${p.role} ${first(p.name)}`:'someone'; };
@@ -639,6 +643,16 @@ function TasksTab({me, people, tasks, coops, members, goals, reload, openCoopId,
     setQuick('');
     await sb.from('wios_tasks').insert({owner_id:me.id, title, status:'active'});
     reload();
+  }
+  async function createTask(){
+    const title=newTaskTitle.trim(); if(!title||busy) return;
+    setBusy(true);
+    try{
+      await sb.from('wios_tasks').insert({owner_id:me.id, title, status:'active', urgent:newTaskUrgent});
+      setShowNewTask(false); setNewTaskTitle(''); setNewTaskUrgent(false);
+      reload();
+    }catch(e){ alert(e.message||'Could not add this task.'); }
+    setBusy(false);
   }
 
   // Drag to reorder within the active list. On drop, rewrite sort_order for all.
@@ -837,16 +851,11 @@ function TasksTab({me, people, tasks, coops, members, goals, reload, openCoopId,
         </button>
       )}
 
-      <div className="qadd">
-        <input placeholder="Add a task..." value={quick} onChange={e=>setQuick(e.target.value)}
-          onKeyDown={e=>e.key==='Enter'&&addQuick()}/>
-        <button className="btn btn-gold" onClick={()=>quick.trim()?addQuick():setShowAdd(true)} aria-label="Add">+</button>
-      </div>
       <div className="addrow">
-        <button className="btn btn-line btn-sm addbtn" onClick={()=>{ if(quick.trim())addQuick(); else document.querySelector('.qadd input').focus(); }}>
+        <button className="btn btn-line addbtn" onClick={()=>{ setNewTaskTitle(''); setShowNewTask(true); }}>
           {ICON.tasks}<span>Task</span>
         </button>
-        <button className="btn btn-line btn-sm addbtn" onClick={()=>{ setSendTo(null); setSendMsg(''); setShowNewCoop(true); }}>
+        <button className="btn btn-line addbtn" onClick={()=>{ setSendTo(null); setSendMsg(''); setShowNewCoop(true); }}>
           {ICON.coop}<span>Coop</span>
         </button>
       </div>
@@ -886,7 +895,7 @@ function TasksTab({me, people, tasks, coops, members, goals, reload, openCoopId,
       {lists[seg].length===0&&coopGroups.mine.length===0&&coopGroups.theirs.length===0&&
        coopGroups.closed.length===0&&coopGroups.req.length===0&&(
         <div className="empty">
-          {seg==='active'&&'Nothing here. Add a task or coop above.'}
+          {seg==='active'&&'Nothing here yet. Tap Task or Coop to add one.'}
           {seg==='waiting'&&'Nothing is parked with someone else.'}
           {seg==='scheduled'&&'Nothing is set aside for later.'}
           {seg==='done'&&'Completed work lands here.'}
@@ -1059,15 +1068,20 @@ function TasksTab({me, people, tasks, coops, members, goals, reload, openCoopId,
         </Sheet>
       )}
 
-      {showAdd&&(
-        <Sheet onClose={()=>setShowAdd(false)}>
-          <h3>Add</h3>
-          <div className="sub">A task is yours. A coop is shared: you hand it back and forth with a teammate.</div>
-          <button className="opt" onClick={()=>{ setShowAdd(false); document.querySelector('.qadd input').focus(); }}>
-            <span className="g">{ICON.tasks}</span><span className="grow">New task</span>
+      {showNewTask&&(
+        <Sheet onClose={()=>setShowNewTask(false)}>
+          <h3>New task</h3>
+          <div className="sub">Something for you to do. Add it to your Active list.</div>
+          <input autoFocus placeholder="What needs doing?" value={newTaskTitle}
+            onChange={e=>setNewTaskTitle(e.target.value)}
+            onKeyDown={e=>{ if(e.key==='Enter') createTask(); }}/>
+          <button className="opt" style={{marginTop:10}} onClick={()=>setNewTaskUrgent(!newTaskUrgent)}>
+            <span className="g">{newTaskUrgent?'⭐':'☆'}</span>
+            <span className="grow">{newTaskUrgent?'Urgent, pin to top':'Mark urgent'}</span>
           </button>
-          <button className="opt" onClick={()=>{ setShowAdd(false); setSendTo(null); setSendMsg(''); setShowNewCoop(true); }}>
-            <span className="g">{ICON.coop}</span><span className="grow">New coop with a teammate</span>
+          <div style={{height:12}}/>
+          <button className="btn btn-gold" style={{width:'100%'}} disabled={!newTaskTitle.trim()||busy} onClick={createTask}>
+            {busy?'Adding...':'Add task'}
           </button>
         </Sheet>
       )}
@@ -1559,81 +1573,6 @@ function DailyTab({me, recs, reload}){
     reload();
   }
 
-  function EditSheet(){
-    const isNew=edit==='new';
-    const [f,setF]=useState(isNew
-      ?{title:'',freq:'daily',days:[1,2,3,4,5],day_of_month:1,time_hhmm:'09:00',active:true}
-      :{...edit, days:edit.days||[], day_of_month:edit.day_of_month||1});
-    const [saving,setSaving]=useState(false);
-    const set=(k,v)=>setF(x=>({...x,[k]:v}));
-    const bad = !(f.title||'').trim() || (f.freq==='weekly' && !f.days.length);
-
-    async function save(){
-      if(bad||saving) return; setSaving(true);
-      const row={owner_id:me.id, title:f.title.trim(), freq:f.freq,
-        days: f.freq==='weekly'?f.days.slice().sort():null,
-        day_of_month: f.freq==='monthly'?Math.min(31,Math.max(1,+f.day_of_month||1)):null,
-        time_hhmm:f.time_hhmm, active:f.active};
-      if(isNew) await sb.from('wios_recurrings').insert(row);
-      else await sb.from('wios_recurrings').update(row).eq('id',edit.id);
-      setEdit(null); reload();
-    }
-    async function remove(){
-      if(!confirm('Delete this reminder? The streak goes with it.')) return;
-      await sb.from('wios_recurrings').delete().eq('id',edit.id);
-      setEdit(null); reload();
-    }
-    return (
-      <Sheet onClose={()=>setEdit(null)}>
-        <h3>{isNew?'New reminder':'Edit reminder'}</h3>
-        <div className="sub">A notification arrives at this time on every due day, until you check it off.</div>
-        <input placeholder="e.g. Post on Instagram" value={f.title} onChange={e=>set('title',e.target.value)}/>
-        <div className="lbl">Repeats</div>
-        <div className="seg" style={{marginBottom:0}}>
-          {['daily','weekly','monthly'].map(fr=>(
-            <button key={fr} className={f.freq===fr?'on':''} onClick={()=>set('freq',fr)}>
-              {fr[0].toUpperCase()+fr.slice(1)}
-            </button>
-          ))}
-        </div>
-        {f.freq==='weekly'&&<>
-          <div className="daychips">
-            {DOW.map((d,i)=>(
-              <button key={d} className={f.days.includes(i)?'on':''}
-                onClick={()=>set('days', f.days.includes(i)?f.days.filter(x=>x!==i):[...f.days,i])}>{d[0]}</button>
-            ))}
-          </div>
-          {!f.days.length&&<div className="err" style={{marginTop:8}}>Pick at least one day.</div>}
-        </>}
-        {f.freq==='monthly'&&<>
-          <div className="row" style={{marginTop:10}}>
-            <span className="note" style={{flex:1}}>Day of the month</span>
-            <input type="number" min="1" max="31" value={f.day_of_month} style={{width:88,flex:'none'}}
-              onChange={e=>set('day_of_month',e.target.value)}/>
-          </div>
-          <div className="note" style={{marginTop:6}}>
-            A day past the end of a short month falls on that month's last day.
-          </div>
-        </>}
-        <div className="lbl">Remind at</div>
-        <select value={f.time_hhmm} onChange={e=>set('time_hhmm',e.target.value)}>
-          {timeOpts.map(t=><option key={t} value={t}>{timeLabel(t)}</option>)}
-        </select>
-        {!isNew&&(
-          <button className="opt" style={{marginTop:14}} onClick={()=>set('active',!f.active)}>
-            <span className="g">{f.active?'⏸️':'▶️'}</span>
-            <span className="grow">{f.active?'Pause this reminder':'Resume this reminder'}</span>
-          </button>
-        )}
-        <div style={{height:10}}/>
-        <button className="btn btn-gold" style={{width:'100%'}} disabled={bad||saving} onClick={save}>
-          {saving?'Saving...':'Save'}
-        </button>
-        {!isNew&&<button className="btn btn-red" style={{width:'100%',marginTop:8}} onClick={remove}>Delete</button>}
-      </Sheet>
-    );
-  }
-
   return (
     <div>
       <div className="sect">Today {due.length>0&&<span className="n">{left} left</span>}</div>
@@ -1678,8 +1617,89 @@ function DailyTab({me, recs, reload}){
       <button className="btn btn-line" style={{width:'100%',marginTop:6}} onClick={()=>setEdit('new')}>
         + New reminder
       </button>
-      {edit&&<EditSheet/>}
+      {edit&&<RecurringEditSheet edit={edit} me={me} timeOpts={timeOpts}
+        onClose={()=>setEdit(null)} reload={reload}/>}
     </div>
+  );
+}
+
+/* Lifted out of DailyTab so it is a stable component identity. When it was
+   nested, every poll-driven re-render remounted it and reset the form, which
+   made the popup flicker open/closed. */
+function RecurringEditSheet({edit, me, timeOpts, onClose, reload}){
+  const isNew=edit==='new';
+  const [f,setF]=useState(isNew
+    ?{title:'',freq:'daily',days:[1,2,3,4,5],day_of_month:1,time_hhmm:'09:00',active:true}
+    :{...edit, days:edit.days||[], day_of_month:edit.day_of_month||1});
+  const [saving,setSaving]=useState(false);
+  const set=(k,v)=>setF(x=>({...x,[k]:v}));
+  const bad = !(f.title||'').trim() || (f.freq==='weekly' && !f.days.length);
+
+  async function save(){
+    if(bad||saving) return; setSaving(true);
+    const row={owner_id:me.id, title:f.title.trim(), freq:f.freq,
+      days: f.freq==='weekly'?f.days.slice().sort():null,
+      day_of_month: f.freq==='monthly'?Math.min(31,Math.max(1,+f.day_of_month||1)):null,
+      time_hhmm:f.time_hhmm, active:f.active};
+    try{
+      if(isNew) await sb.from('wios_recurrings').insert(row);
+      else await sb.from('wios_recurrings').update(row).eq('id',edit.id);
+      onClose(); reload();
+    }catch(e){ alert(e.message||'Could not save.'); setSaving(false); }
+  }
+  async function remove(){
+    if(!confirm('Delete this reminder? The streak goes with it.')) return;
+    await sb.from('wios_recurrings').delete().eq('id',edit.id);
+    onClose(); reload();
+  }
+  return (
+    <Sheet onClose={onClose}>
+      <h3>{isNew?'New reminder':'Edit reminder'}</h3>
+      <div className="sub">A notification arrives at this time on every due day, until you check it off.</div>
+      <input placeholder="e.g. Post on Instagram" value={f.title} onChange={e=>set('title',e.target.value)}/>
+      <div className="lbl">Repeats</div>
+      <div className="seg" style={{marginBottom:0}}>
+        {['daily','weekly','monthly'].map(fr=>(
+          <button key={fr} className={f.freq===fr?'on':''} onClick={()=>set('freq',fr)}>
+            {fr[0].toUpperCase()+fr.slice(1)}
+          </button>
+        ))}
+      </div>
+      {f.freq==='weekly'&&<>
+        <div className="daychips">
+          {DOW.map((d,i)=>(
+            <button key={d} className={f.days.includes(i)?'on':''}
+              onClick={()=>set('days', f.days.includes(i)?f.days.filter(x=>x!==i):[...f.days,i])}>{d[0]}</button>
+          ))}
+        </div>
+        {!f.days.length&&<div className="err" style={{marginTop:8}}>Pick at least one day.</div>}
+      </>}
+      {f.freq==='monthly'&&<>
+        <div className="row" style={{marginTop:10}}>
+          <span className="note" style={{flex:1}}>Day of the month</span>
+          <input type="number" min="1" max="31" value={f.day_of_month} style={{width:88,flex:'none'}}
+            onChange={e=>set('day_of_month',e.target.value)}/>
+        </div>
+        <div className="note" style={{marginTop:6}}>
+          A day past the end of a short month falls on that month's last day.
+        </div>
+      </>}
+      <div className="lbl">Remind at</div>
+      <select value={f.time_hhmm} onChange={e=>set('time_hhmm',e.target.value)}>
+        {timeOpts.map(t=><option key={t} value={t}>{timeLabel(t)}</option>)}
+      </select>
+      {!isNew&&(
+        <button className="opt" style={{marginTop:14}} onClick={()=>set('active',!f.active)}>
+          <span className="g">{f.active?'⏸️':'▶️'}</span>
+          <span className="grow">{f.active?'Pause this reminder':'Resume this reminder'}</span>
+        </button>
+      )}
+      <div style={{height:10}}/>
+      <button className="btn btn-gold" style={{width:'100%'}} disabled={bad||saving} onClick={save}>
+        {saving?'Saving...':'Save'}
+      </button>
+      {!isNew&&<button className="btn btn-red" style={{width:'100%',marginTop:8}} onClick={remove}>Delete</button>}
+    </Sheet>
   );
 }
 

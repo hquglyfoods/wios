@@ -1,8 +1,9 @@
 // WIOS service worker: push + notification click + app badge + fast-open cache.
-const CACHE = 'wios-v1';
-const SHELL = [
-  '/', '/index.html', '/manifest.webmanifest',
-  '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png',
+// Bump CACHE whenever cache behavior changes so old caches are dropped.
+const CACHE = 'wios-v2';
+// Only heavy third-party libs are safe to cache-first (they are versioned URLs).
+// The app HTML is NEVER cache-first, so a redeploy always shows immediately.
+const LIBS = [
   'https://unpkg.com/react@18.3.1/umd/react.production.min.js',
   'https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js',
   'https://unpkg.com/@babel/standalone@7.26.4/babel.min.js',
@@ -10,7 +11,7 @@ const SHELL = [
 ];
 self.addEventListener('install', (e) => {
   self.skipWaiting();
-  e.waitUntil(caches.open(CACHE).then((c) => Promise.allSettled(SHELL.map((u) => c.add(u)))));
+  e.waitUntil(caches.open(CACHE).then((c) => Promise.allSettled(LIBS.map((u) => c.add(u)))));
 });
 self.addEventListener('activate', (e) => {
   e.waitUntil((async () => {
@@ -20,27 +21,47 @@ self.addEventListener('activate', (e) => {
   })());
 });
 
-// Cache-first for the shell + big CDN libs (the slow part of first paint).
-// Everything else (Supabase API, Netlify functions) goes straight to network.
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-  const isShell =
-    url.origin === self.location.origin && (url.pathname === '/' || url.pathname === '/index.html' ||
-      url.pathname === '/manifest.webmanifest' || url.pathname.startsWith('/icons/'));
+
   const isLib =
     url.hostname === 'unpkg.com' || url.hostname === 'cdn.jsdelivr.net' ||
     url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
-  if (!isShell && !isLib) return;   // don't touch API/data requests
-  event.respondWith((async () => {
-    const cached = await caches.match(req);
-    const network = fetch(req).then((res) => {
-      if (res && res.status === 200) caches.open(CACHE).then((c) => c.put(req, res.clone()));
+  const isIcon = url.origin === self.location.origin && url.pathname.startsWith('/icons/');
+
+  // Cache-first ONLY for versioned libs and icons (they don't change without a URL change).
+  if (isLib || isIcon) {
+    event.respondWith((async () => {
+      const cached = await caches.match(req);
+      if (cached) return cached;
+      const res = await fetch(req);
+      if (res && res.status === 200) { const c = await caches.open(CACHE); c.put(req, res.clone()); }
       return res;
-    }).catch(() => cached);
-    return cached || network;   // serve cache instantly, refresh in background
-  })());
+    })());
+    return;
+  }
+
+  // The app HTML (/, /index.html) is network-first so a redeploy always wins.
+  // Fall back to cache only when offline.
+  const isHtml =
+    url.origin === self.location.origin &&
+    (url.pathname === '/' || url.pathname === '/index.html' || url.pathname.endsWith('.html'));
+  if (isHtml) {
+    event.respondWith((async () => {
+      try {
+        const res = await fetch(req, { cache: 'no-store' });
+        if (res && res.status === 200) { const c = await caches.open(CACHE); c.put(req, res.clone()); }
+        return res;
+      } catch (e) {
+        const cached = await caches.match(req);
+        return cached || Response.error();
+      }
+    })());
+    return;
+  }
+  // Everything else (Supabase API, Netlify functions): straight to network, untouched.
 });
 
 self.addEventListener('push', (event) => {
