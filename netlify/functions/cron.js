@@ -198,6 +198,61 @@ exports.handler = async () => {
       }
     }
 
+    // ── 5. Monday 10:00 ET: generate weekly coaching for everyone (and the CEO brief for
+    //    admins), then push. The cron runs every 30 min, so fire in the 10:00 to 10:29 window.
+    if (et.dow === 1 && et.hhmm >= '10:00' && et.hhmm < '10:30') {
+      const base = (env.URL || env.DEPLOY_PRIME_URL || '').replace(/\/$/, '');
+      const svc = env.SUPABASE_SERVICE_KEY;
+      if (base && svc) {
+        const people = await sb('wios_profiles?active=eq.true&select=id,name,is_admin');
+        for (const u of people) {
+          // one coaching note per person per week; skip if already sent this week
+          const wk = periodKeys(et).week;
+          const has = await sb(`wios_coaching_messages?user_id=eq.${u.id}&week_key=eq.${wk}&is_weekly=eq.true&select=id&limit=1`);
+          if (has.length) continue;
+          try {
+            const r = await fetch(`${base}/.netlify/functions/coach`, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', 'x-wios-service': svc },
+              body: JSON.stringify({ action: 'ensure', for_user: u.id }),
+            });
+            const d = await r.json().catch(() => ({}));
+            if (d && d.created) {
+              await pushToUsers([u.id], {
+                title: 'Your weekly coaching is ready', body: 'See what improved and where to focus this week.',
+                tag: 'wios-coach', url: '/', kind: 'coach',
+              }, env);
+              report.coaching = (report.coaching || 0) + 1;
+            }
+          } catch (e) { console.error('coach cron', u.id, e.message); }
+
+          // admins also get the CEO assistant Monday brief
+          if (u.is_admin) {
+            const hasB = await sb(`wios_ceo_brief_messages?owner_id=eq.${u.id}&week_key=eq.${wk}&is_weekly=eq.true&select=id&limit=1`);
+            if (!hasB.length) {
+              try {
+                const rb = await fetch(`${base}/.netlify/functions/ceo-brief`, {
+                  method: 'POST',
+                  headers: { 'content-type': 'application/json', 'x-wios-service': svc },
+                  body: JSON.stringify({ action: 'ensure', for_user: u.id }),
+                });
+                const db = await rb.json().catch(() => ({}));
+                if (db && db.created) {
+                  await pushToUsers([u.id], {
+                    title: 'Your CEO assistant brief is ready', body: 'This week across your leadership team.',
+                    tag: 'wios-ceo-brief', url: '/', kind: 'brief',
+                  }, env);
+                  report.ceoBrief = (report.ceoBrief || 0) + 1;
+                }
+              } catch (e) { console.error('ceo brief cron', u.id, e.message); }
+            }
+          }
+        }
+      } else {
+        console.error('cron Monday: missing URL or SERVICE_KEY, cannot generate coaching');
+      }
+    }
+
     console.log('cron report', JSON.stringify(report), 'ET', et.dateStr, et.hhmm);
     return { statusCode: 200, body: JSON.stringify(report) };
   } catch (e) {

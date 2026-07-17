@@ -14,7 +14,7 @@ const { ROLES_DOC } = require('./roles-doc.js');
 
 const SUPA_URL = 'https://xttqxjuunuchlxjrknyt.supabase.co';
 const ANON_KEY = 'sb_publishable_qL2xlkjIkIWGOkzaDitIJw_3iRNx9dA';
-const MODEL = 'claude-sonnet-5';
+const MODEL = 'claude-opus-4-8';
 
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -46,43 +46,52 @@ exports.handler = async (event) => {
     if (!env.ANTHROPIC_API_KEY) {
       return { statusCode: 500, headers: cors, body: JSON.stringify({ error: 'The AI key is not set on the server yet.' }) };
     }
-    const token = (event.headers.authorization || event.headers.Authorization || '').replace(/^Bearer\s+/i, '');
-    if (!token) return { statusCode: 401, headers: cors, body: JSON.stringify({ error: 'Sign in again.' }) };
-    const uRes = await fetch(`${SUPA_URL}/auth/v1/user`, { headers: { 'apikey': ANON_KEY, 'Authorization': `Bearer ${token}` } });
-    if (!uRes.ok) return { statusCode: 401, headers: cors, body: JSON.stringify({ error: 'Sign in again.' }) };
-    const user = await uRes.json();
-
     const sb = makeSb(env);
-    const meRows = await sb(`wios_profiles?id=eq.${user.id}&select=id,name,role,is_admin,active`);
-    if (!meRows.length || !meRows[0].active) return { statusCode: 403, headers: cors, body: JSON.stringify({ error: 'Not a WIOS user.' }) };
-    const me = meRows[0];
-    if (!me.is_admin) return { statusCode: 403, headers: cors, body: JSON.stringify({ error: 'This assistant is for the CEO only.' }) };
-
     const payload = JSON.parse(event.body || '{}');
+
+    let me;
+    const svcKey = event.headers['x-wios-service'] || event.headers['X-Wios-Service'];
+    if (svcKey && env.SUPABASE_SERVICE_KEY && svcKey === env.SUPABASE_SERVICE_KEY && payload.for_user) {
+      const rows = await sb(`wios_profiles?id=eq.${payload.for_user}&select=id,name,role,is_admin,active`);
+      if (!rows.length || !rows[0].active) return { statusCode: 404, headers: cors, body: JSON.stringify({ error: 'No such user.' }) };
+      me = rows[0];
+      if (!me.is_admin) return { statusCode: 403, headers: cors, body: JSON.stringify({ error: 'This assistant is for the CEO only.' }) };
+    } else {
+      const token = (event.headers.authorization || event.headers.Authorization || '').replace(/^Bearer\s+/i, '');
+      if (!token) return { statusCode: 401, headers: cors, body: JSON.stringify({ error: 'Sign in again.' }) };
+      const uRes = await fetch(`${SUPA_URL}/auth/v1/user`, { headers: { 'apikey': ANON_KEY, 'Authorization': `Bearer ${token}` } });
+      if (!uRes.ok) return { statusCode: 401, headers: cors, body: JSON.stringify({ error: 'Sign in again.' }) };
+      const user = await uRes.json();
+      const meRows = await sb(`wios_profiles?id=eq.${user.id}&select=id,name,role,is_admin,active`);
+      if (!meRows.length || !meRows[0].active) return { statusCode: 403, headers: cors, body: JSON.stringify({ error: 'Not a WIOS user.' }) };
+      me = meRows[0];
+      if (!me.is_admin) return { statusCode: 403, headers: cors, body: JSON.stringify({ error: 'This assistant is for the CEO only.' }) };
+    }
+
     const action = String(payload.action || 'ensure');
     const windowStart = new Date(Date.now() - 28 * 864e5).toISOString();
 
     const sys =
 `You are the CEO's executive assistant inside WIOS, the leadership workspace for Ugly Donuts & Corn Dogs.
 You report to ${me.name}, the CEO. Your job is to keep the CEO fully informed about how each C-level leader is doing, in plain, candid language. You are loyal to the CEO and tell the truth, including things a leader might not want the CEO to hear.
-For each leader, judge their week against the definition of THEIR seat in the role reference. For the COO especially, separate real COO work (building operating systems and standards, training and certifying operators, franchisee build-out, quality audits, developing store leaders) from general-manager firefighting on single stores.
+The mission: become the number one donut brand and the number one Korean food brand in the United States. The company is now franchising, and each C-level leader must grow (not coast in their comfort zone) for the company to get there. The company also runs a smaller premium syrup brand, Umma's Recipe: if data mentions syrup or Umma's Recipe, understand that context. Judge leaders against that mission and their seat.
+For each leader, judge their week against the definition of THEIR seat in the role reference, and against whether the systems that seat owns are being built to work at scale. Apply this equally to every role: CEO (pipeline, capital, real estate), CBO (codified recipes, specs, store design, brand standards), COO (training, certification, audit and QA, store-leader development), CMO (grand-opening playbook, franchise lead generation, marketing fund, repeat rate), CPO (supply chain at scale, ordering platform, opening packages, sourcing). For any seat, separate real seat-level work (building systems and standards, developing people, planning) from low-level firefighting that a manager could own.
 You are given each leader's records (tasks, goals) for last week AND their private coaching notes and coaching chat. Use the coaching material to tell the CEO what the coach advised and, importantly, whether the leader appears to be acting on it or ignoring it. Cite specific real examples. Never invent tasks, dates, numbers, or quotes.
 Never use em dashes. Use commas, periods, or parentheses instead. Keep it readable on a phone.
 
 FORMAT (the CEO wants to grasp it at a glance, not read a wall of text):
+- Be direct and concise. Short sentences, lead with the point, cut filler. Say the hard thing plainly.
+- Bold the few pivotal words with **double asterisks** (a key miss, a number, a verdict). Do not bold whole sentences.
 - For each leader, use a header line "## ROLE Name" (for example "## COO Jiwoon").
 - Under each, use short "- " bullets grouped by these labels on their own lines: "Did well:", "Missing:", "Coaching:" (what the coach advised and whether they are acting on it).
 - End the whole brief with a "## Watch this week" section of short "- " bullets across the team.
-Keep bullets to one or two sentences. Be candid and specific.
+Keep bullets to one or two short sentences. If the CEO asks for more depth, then expand.
 
 ROLE REFERENCE:
 ${ROLES_DOC}`;
 
     async function loadVisible() {
       return await sb(`wios_ceo_brief_messages?owner_id=eq.${me.id}&created_at=gte.${encodeURIComponent(windowStart)}&select=*&order=created_at.asc&limit=400`);
-    }
-    async function loadContext() {
-      return await sb(`wios_ceo_brief_messages?owner_id=eq.${me.id}&select=*&order=created_at.desc&limit=40`);
     }
 
     // Build the per-leader data block for last week.
@@ -138,6 +147,7 @@ ${chatLines}`);
       const now = new Date();
       const thisWeek = mondayKey(now);
       const existing = await sb(`wios_ceo_brief_messages?owner_id=eq.${me.id}&week_key=eq.${thisWeek}&is_weekly=eq.true&select=id&limit=1`);
+      let createdWeekly = false;
       if (!existing.length) {
         const { block } = await teamBlock();
         const prompt =
@@ -158,13 +168,14 @@ ${block}`;
               method: 'POST',
               body: JSON.stringify({ owner_id: me.id, role: 'assistant', content: text, week_key: thisWeek, is_weekly: true }),
             });
+            createdWeekly = true;
           }
         } else {
           console.error('ceo brief gen failed', aiRes.status, await aiRes.text());
         }
       }
       const thread = await loadVisible();
-      return { statusCode: 200, headers: cors, body: JSON.stringify({ thread, week_key: thisWeek }) };
+      return { statusCode: 200, headers: cors, body: JSON.stringify({ thread, week_key: thisWeek, created: createdWeekly }) };
     }
 
     // ---------------------------------------------------------
@@ -180,22 +191,71 @@ ${block}`;
 
       // fresh team data so the CEO can ask follow-ups grounded in current records
       const { block } = await teamBlock();
-      const ctx = (await loadContext()).reverse();
-      const recentTurns = ctx.slice(-16).map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: String(m.content).slice(0, 4000) }));
+      // full history so the assistant remembers past conversations and the CEO's style:
+      // recent turns verbatim, everything older folded into a compact digest
+      const full = (await sb(`wios_ceo_brief_messages?owner_id=eq.${me.id}&select=role,content,is_weekly,created_at&order=created_at.desc&limit=200`)).reverse();
+      const nonWeekly = full.filter((m) => !m.is_weekly);
+      const recent = nonWeekly.slice(-16);
+      const older = nonWeekly.slice(0, Math.max(0, nonWeekly.length - 16));
+      let memoryNote = '';
+      if (older.length) {
+        const digest = older.slice(-60).map((m) => `${m.role === 'assistant' ? 'You' : 'CEO'}: ${String(m.content).slice(0, 220)}`).join('\n');
+        memoryNote = `\n\nEARLIER CONVERSATION MEMORY (older chats with the CEO, for context and style, oldest first):\n${digest}`;
+      }
+      const recentTurns = recent.map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: String(m.content).slice(0, 4000) }));
       const messages = recentTurns.length && recentTurns[recentTurns.length - 1].role === 'user' ? recentTurns : [...recentTurns, { role: 'user', content: message }];
+
+      // roster so the assistant can map a role or name to a person for directives
+      const roster = (await sb('wios_profiles?active=eq.true&select=id,name,role&order=role.asc'))
+        .map((p) => `${p.role} ${p.name} (id ${p.id})`).join(', ');
+
+      const directiveProtocol =
+`\n\nDIRECTIVE PROTOCOL: The CEO may give you standing guidance for how the coaching bots should coach the leaders (for example "push the COO harder on motivation" or "get everyone studying the bigger picture"). When the CEO's message contains such guidance, do two things:
+1. Reply normally and briefly confirm you will pass it to the coaching, in your own words.
+2. On the VERY LAST line of your reply, append a machine tag exactly in this format, nothing after it:
+[[DIRECTIVE target=<user id, or ALL> text=<the directive rewritten as a clear instruction to a coach>]]
+Use ALL for the whole team, or the specific user id from the roster for one person. Only append the tag when there is a real directive. Never append it for ordinary questions. The tag will be removed before the CEO sees your reply, so do not reference it.
+ROSTER: ${roster}`;
 
       const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-        body: JSON.stringify({ model: MODEL, max_tokens: 1800, system: sys + `\n\nCURRENT TEAM DATA:\n${block}`, messages }),
+        body: JSON.stringify({ model: MODEL, max_tokens: 1800, system: sys + memoryNote + directiveProtocol + `\n\nCURRENT TEAM DATA:\n${block}`, messages }),
       });
       if (!aiRes.ok) {
         console.error('ceo brief chat failed', aiRes.status, await aiRes.text());
         return { statusCode: 502, headers: cors, body: JSON.stringify({ error: 'The assistant did not respond. Try again in a moment.' }) };
       }
       const ai = await aiRes.json();
-      const answer = (ai.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim()
+      let answer = (ai.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim()
         || 'Let me look into that for you.';
+
+      // capture any directive tag, store it, and strip it from what the CEO sees
+      const dm = answer.match(/\[\[DIRECTIVE\s+target=(\S+)\s+text=([\s\S]*?)\]\]/i);
+      if (dm) {
+        const rawTarget = dm[1].trim();
+        const text = dm[2].trim().slice(0, 1000);
+        let target = /^all$/i.test(rawTarget) ? null : rawTarget;
+        // only accept a target that is a real active profile id; otherwise treat as ALL
+        if (target) {
+          const uuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(target);
+          if (!uuidLike) { target = null; }
+          else {
+            const exists = await sb(`wios_profiles?id=eq.${target}&active=eq.true&select=id&limit=1`);
+            if (!exists.length) target = null;
+          }
+        }
+        if (text) {
+          try {
+            await sb('wios_coach_directives', {
+              method: 'POST',
+              headers: { 'Prefer': 'return=minimal' },
+              body: JSON.stringify({ created_by: me.id, target_user_id: target, directive: text }),
+            });
+          } catch (e) { console.error('directive store failed', e); }
+        }
+        answer = answer.replace(dm[0], '').trim();
+      }
       await sb('wios_ceo_brief_messages', {
         method: 'POST',
         body: JSON.stringify({ owner_id: me.id, role: 'assistant', content: answer, week_key: thisWeek, is_weekly: false }),

@@ -284,6 +284,34 @@ create index if not exists wios_ceobrief_idx on public.wios_ceo_brief_messages(o
 create unique index if not exists wios_ceobrief_weekly_uq
   on public.wios_ceo_brief_messages(owner_id, week_key) where is_weekly;
 
+-- Ask bot memory: every question and answer, kept forever, so the bot remembers past
+-- conversations and the person's style. The Ask screen starts fresh each open (it does not
+-- replay old turns), but the bot loads recent history plus a digest for context.
+create table if not exists public.wios_ask_messages (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.wios_profiles(id) on delete cascade,
+  role text not null,                        -- 'assistant' | 'user'
+  content text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists wios_ask_idx on public.wios_ask_messages(user_id, created_at);
+
+-- Coaching directives: standing instructions the CEO gives (through the CEO assistant) that the
+-- coaching bots must quietly follow. target_user_id null means it applies to every leader;
+-- otherwise it applies to that one person. Coaches read active directives into their prompt but
+-- never reveal them to the person being coached.
+create table if not exists public.wios_coach_directives (
+  id uuid primary key default gen_random_uuid(),
+  created_by uuid not null references public.wios_profiles(id) on delete cascade,
+  target_user_id uuid references public.wios_profiles(id) on delete cascade,   -- null = all leaders
+  directive text not null,
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+create index if not exists wios_directive_idx on public.wios_coach_directives(target_user_id, active);
+
+
+
 
 
 -- ============================================================
@@ -325,6 +353,8 @@ alter table public.wios_push_subs enable row level security;
 alter table public.wios_notifications enable row level security;
 alter table public.wios_coaching_messages enable row level security;
 alter table public.wios_ceo_brief_messages enable row level security;
+alter table public.wios_ask_messages enable row level security;
+alter table public.wios_coach_directives enable row level security;
 
 -- profiles: every active WIOS user sees the roster (needed to address teammates).
 -- Members are added and deactivated by the wios-members function using the
@@ -538,6 +568,16 @@ drop policy if exists wios_ceobrief_all on public.wios_ceo_brief_messages;
 create policy wios_ceobrief_all on public.wios_ceo_brief_messages
   for all using (owner_id = auth.uid() and public.wios_is_admin())
   with check (owner_id = auth.uid() and public.wios_is_admin());
+
+drop policy if exists wios_ask_all on public.wios_ask_messages;
+create policy wios_ask_all on public.wios_ask_messages
+  for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- Only admins can create or see directives from the client. The coaching function reads them
+-- with the service key (which bypasses RLS), so the coached person never sees them.
+drop policy if exists wios_directive_admin on public.wios_coach_directives;
+create policy wios_directive_admin on public.wios_coach_directives
+  for all using (public.wios_is_admin()) with check (public.wios_is_admin());
 
 -- retire the old helper name if an earlier install created it
 drop function if exists public.wios_is_ceo();

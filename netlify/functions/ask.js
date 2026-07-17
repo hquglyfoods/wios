@@ -153,17 +153,18 @@ ${coopLines.join('\n') || 'none'}`;
     const system =
 `You are the assistant inside WIOS, the leadership workspace for Ugly Donuts & Corn Dogs.
 You answer questions about the work recorded in the app: tasks, goals, daily reminders, and coop (shared relay) tasks.
+The company is Ugly Donuts & Corn Dogs, building to become the number one donut brand and the number one Korean food brand in the United States, now franchising. It also runs a smaller premium syrup brand, Umma's Recipe: if tasks or data mention syrup sales or production or Umma's Recipe, understand that context.
 ${scopeText}
 Answer only from the records below. If the answer is not in the records, say so plainly rather than guessing.
 Be concise and specific. When the user asks "when" something happened, cite the dates shown.
 When useful, group by date or by person. Do not invent tasks, dates, or people.
-Format for easy reading, not a wall of text: lead with a one line answer, then short "- " bullets for the details. For a multi part answer, use short "## Label" section headers with bullets under each. Keep bullets to one or two sentences.
+Format for easy reading, not a wall of text: be direct and concise, lead with a one line answer, then short "- " bullets for the details. Bold the few pivotal words with **double asterisks**. For a multi part answer, use short "## Label" section headers with bullets under each. Keep bullets to one or two short sentences. If they ask for more detail, then expand.
 Never use em dashes. Use commas, periods, or parentheses instead.
 
 ROLE-FIT AND GROWTH QUESTIONS: If the user asks whether their work fits their role, how to grow into it, what they are missing, or how to become excellent in their seat (for example "am I doing what fits my role as COO", "how do I grow as COO", "what am I missing"), give a grounded coaching answer:
 - Anchor on the ROLE REFERENCE below, which is this company's own definition of each seat: its responsibilities, direction, what to master, the level to reach, and the standards to hit. Judge the person against their OWN seat's definition, not a generic idea of being busy.
 - Look at the person's actual tasks, goals, and coop work in the records. Sort what they are really spending time on into (a) true role-level work that grows the seat (building systems, standards, playbooks, training and developing people, strategy, planning) versus (b) lower-level day-to-day or firefighting work that a manager or staffer could own. Cite a few real example tasks from the records (never invent any).
-- Say honestly where their time is actually going. If most of it is low-level firefighting with little that builds the system or grows them, name it directly and kindly. For the COO specifically, distinguish real COO work (building the QA and audit system, the certification program, developing store leaders) from general-manager firefighting on single stores.
+- Say honestly where their time is actually going. If most of it is low-level firefighting with little that builds the system or grows them, name it directly and kindly. This applies to every seat: separate real seat-level work (building systems and standards, developing people, planning) from firefighting a manager could own. For example, a COO doing mostly single-store fixes instead of building the training, certification, and audit systems is stuck in general-manager work, and the same logic applies to each role against what its seat should own.
 - Then coach forward, using the reference but not limited to it: what excellent looks like for this seat, the specific gaps between where they are now and that level, what they should master next, and 2 to 4 concrete, doable shifts or next steps that would move them toward true role-level work and toward the standards their seat is supposed to hit. Be specific to what the records show, not generic advice.
 - You may reason beyond the document to give genuinely useful growth guidance, as long as it is consistent with the company's franchising-only, build-the-system-so-it-runs-without-you direction. Keep the tone constructive and peer-to-peer, a trusted advisor, not harsh and not flattering.
 - Only give this fuller analysis when they ask about role fit or growth. For plain lookups ("what did I do last week"), just answer the lookup.
@@ -179,8 +180,21 @@ ${ROLES_DOC}
 RECORDS:
 ${dataBlock}`;
 
+    // Ask bot memory: load the person's stored history from the database so the bot
+    // remembers past conversations and their style, even though the screen starts fresh.
+    // Recent turns are included verbatim; older ones are summarized into a compact digest.
+    const allAsk = await sb(`wios_ask_messages?user_id=eq.${me.id}&select=role,content,created_at&order=created_at.desc&limit=200`);
+    const askChrono = allAsk.slice().reverse();                 // oldest first
+    const recentTurns = askChrono.slice(-24);                   // last 24 verbatim
+    const olderTurns = askChrono.slice(0, Math.max(0, askChrono.length - 24));
+    let memoryNote = '';
+    if (olderTurns.length) {
+      const digest = olderTurns.slice(-60).map(m => `${m.role === 'assistant' ? 'You' : 'Them'}: ${String(m.content).slice(0, 220)}`).join('\n');
+      memoryNote = `\n\nEARLIER CONVERSATION MEMORY (older exchanges with this person, for context and to remember their style, oldest first):\n${digest}`;
+    }
+
     const messages = [
-      ...history.filter(h => h && (h.role === 'user' || h.role === 'assistant') && h.content)
+      ...recentTurns.filter(h => h && (h.role === 'user' || h.role === 'assistant') && h.content)
         .map(h => ({ role: h.role, content: String(h.content).slice(0, 4000) })),
       { role: 'user', content: question },
     ];
@@ -192,7 +206,7 @@ ${dataBlock}`;
         'anthropic-version': '2023-06-01',
         'content-type': 'application/json',
       },
-      body: JSON.stringify({ model: MODEL, max_tokens: 2000, system, messages }),
+      body: JSON.stringify({ model: MODEL, max_tokens: 2000, system: system + memoryNote, messages }),
     });
 
     if (!aiRes.ok) {
@@ -203,6 +217,18 @@ ${dataBlock}`;
     const ai = await aiRes.json();
     const answer = (ai.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim()
       || 'I could not find anything to say about that.';
+
+    // persist this exchange forever so the bot keeps context next time
+    try {
+      await sb('wios_ask_messages', {
+        method: 'POST',
+        headers: { 'Prefer': 'return=minimal' },
+        body: JSON.stringify([
+          { user_id: me.id, role: 'user', content: question },
+          { user_id: me.id, role: 'assistant', content: answer },
+        ]),
+      });
+    } catch (e) { console.error('ask store failed', e); }
 
     return { statusCode: 200, headers: cors, body: JSON.stringify({ answer }) };
   } catch (err) {
