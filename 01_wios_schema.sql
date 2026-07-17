@@ -49,10 +49,14 @@ create table if not exists public.wios_tasks (
   subtasks jsonb not null default '[]'::jsonb, -- [{id, text, done}]
   due_at timestamptz,                          -- optional "finish before" deadline
   due_reminded boolean not null default false, -- so the 24h-before push fires once
+  alarm_at timestamptz,                         -- optional reminder: push at this exact time
+  alarm_fired boolean not null default false,   -- so the reminder push fires once
   created_at timestamptz not null default now(),
   completed_at timestamptz
 );
 create index if not exists wios_tasks_owner_idx on public.wios_tasks(owner_id, status);
+alter table public.wios_tasks add column if not exists alarm_at timestamptz;
+alter table public.wios_tasks add column if not exists alarm_fired boolean not null default false;
 create unique index if not exists wios_tasks_sysref_uq
   on public.wios_tasks(owner_id, system_ref) where system_ref is not null;
 -- upgrade path for an earlier install
@@ -275,6 +279,9 @@ create policy wios_coops_insert on public.wios_coops
 drop policy if exists wios_coops_update on public.wios_coops;
 create policy wios_coops_update on public.wios_coops
   for update using (creator_id = auth.uid() or public.wios_is_coop_member(id));
+drop policy if exists wios_coops_delete on public.wios_coops;
+create policy wios_coops_delete on public.wios_coops
+  for delete using (creator_id = auth.uid() or public.wios_is_admin());
 
 drop policy if exists wios_cm_select on public.wios_coop_members;
 create policy wios_cm_select on public.wios_coop_members
@@ -286,6 +293,10 @@ create policy wios_cm_insert on public.wios_coop_members
 drop policy if exists wios_cm_update on public.wios_coop_members;
 create policy wios_cm_update on public.wios_coop_members
   for update using (user_id = auth.uid());
+drop policy if exists wios_cm_delete on public.wios_coop_members;
+create policy wios_cm_delete on public.wios_coop_members
+  for delete using (user_id = auth.uid() or public.wios_is_admin()
+    or exists (select 1 from public.wios_coops c where c.id = coop_id and c.creator_id = auth.uid()));
 
 drop policy if exists wios_msg_select on public.wios_coop_messages;
 create policy wios_msg_select on public.wios_coop_messages
@@ -293,6 +304,10 @@ create policy wios_msg_select on public.wios_coop_messages
 drop policy if exists wios_msg_insert on public.wios_coop_messages;
 create policy wios_msg_insert on public.wios_coop_messages
   for insert with check (user_id = auth.uid() and public.wios_is_coop_member(coop_id));
+drop policy if exists wios_msg_delete on public.wios_coop_messages;
+create policy wios_msg_delete on public.wios_coop_messages
+  for delete using (public.wios_is_admin()
+    or exists (select 1 from public.wios_coops c where c.id = coop_id and c.creator_id = auth.uid()));
 
 -- goals: owner full access, admins read-all
 drop policy if exists wios_goals_select on public.wios_goals;

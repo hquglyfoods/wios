@@ -114,6 +114,17 @@ exports.handler = async () => {
       report.dueReminders = (report.dueReminders || 0) + 1;
     }
 
+    // ── 2d. Task reminders: push at the exact alarm_at time the user set ──
+    // Only for tasks still on the person's list (active or waiting), fired once.
+    const alarmTasks = await sb(`wios_tasks?alarm_fired=eq.false&alarm_at=lte.${encodeURIComponent(nowIso)}&status=in.(active,waiting)&select=id,owner_id,title,alarm_at`);
+    for (const t of alarmTasks) {
+      await pushToUsers([t.owner_id], {
+        title: 'Reminder', body: t.title, tag: 'wios-alarm-' + t.id, url: '/', kind: 'task',
+      }, env);
+      await sb(`wios_tasks?id=eq.${t.id}`, { method: 'PATCH', body: JSON.stringify({ alarm_fired: true }) });
+      report.alarms = (report.alarms || 0) + 1;
+    }
+
     // ── 3. Recurring reminders ──────────────────────────────
     const recs = await sb('wios_recurrings?active=eq.true&select=*');
     for (const r of recs) {

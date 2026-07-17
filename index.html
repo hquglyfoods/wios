@@ -66,7 +66,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 .tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;z-index:40;
   background:rgba(255,255,255,.97);backdrop-filter:blur(12px);border-top:1px solid var(--border);
   display:flex;padding:7px 4px calc(env(safe-area-inset-bottom) + 7px);box-shadow:0 -1px 8px rgba(26,42,58,.06);}
-body.kb-open .tabbar{transform:translateX(-50%) translateY(120%);}   /* get out of the way of the keyboard */
+body.kb-open .tabbar{transform:translateX(-50%) translateY(200%);pointer-events:none;}   /* get fully out of the way of the keyboard */
 .tabbar button{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;
   padding:6px 1px 4px;color:var(--muted2);font-size:10px;font-weight:600;letter-spacing:.01em;
   border-radius:12px;min-height:var(--tap);}
@@ -235,7 +235,7 @@ body.kb-open .tabbar{transform:translateX(-50%) translateY(120%);}   /* get out 
   bottom:calc(env(safe-area-inset-bottom) + 58px + var(--kb, 0px));
   display:flex;flex-direction:column;padding:12px 14px 0;background:var(--bg);z-index:5;
   transition:bottom .18s ease;}
-body.kb-open .askwrap{bottom:calc(var(--kb, 0px) + 6px);}   /* input rides on top of the keyboard */
+body.kb-open .askwrap{bottom:calc(var(--kb, 0px) + env(safe-area-inset-bottom) + 6px);}   /* input rides on top of the keyboard */
 .askscroll{flex:1;overflow-y:auto;padding:4px 2px 8px;display:flex;flex-direction:column;gap:12px;}
 .askintro{margin:auto;text-align:center;padding:20px 10px;}
 .askglyph{font-size:32px;color:var(--gold);margin-bottom:10px;}
@@ -403,6 +403,39 @@ body.kb-open .askwrap{bottom:calc(var(--kb, 0px) + 6px);}   /* input rides on to
   background:var(--panel);box-shadow:inset 0 0 0 1px var(--border);margin-bottom:6px;color:var(--text);}
 .ovopt.on{box-shadow:inset 0 0 0 1.5px var(--gold);color:var(--gold);}
 
+.wiz{background:var(--panel);border-radius:16px;padding:22px 18px;box-shadow:inset 0 0 0 1px var(--border);}
+.wizdots{display:flex;gap:6px;justify-content:center;margin-bottom:18px;}
+.wizdot{width:26px;height:4px;border-radius:2px;background:var(--border2);}
+.wizdot.on{background:var(--gold);}
+.wizdot.done{background:var(--gold-soft);}
+.wizstep{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);text-align:center;}
+.wizq{font-size:17px;font-weight:600;text-align:center;margin:8px 0 16px;line-height:1.4;color:var(--text);}
+
+.cmprow{display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--border);}
+.cmprow:active{background:var(--panel2);}
+.cmpname{display:flex;align-items:center;gap:7px;width:118px;flex:none;font-size:13.5px;font-weight:600;overflow:hidden;}
+.cmpname .grow{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cmpbar{flex:1;height:8px;border-radius:4px;background:var(--border);overflow:hidden;}
+.cmpbar i{display:block;height:100%;border-radius:4px;}
+.cmpscore{flex:none;width:48px;text-align:right;font-size:11.5px;font-weight:700;}
+.cmpscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -2px;}
+.cmptable{border-collapse:collapse;width:100%;font-size:13px;}
+.cmptable th,.cmptable td{padding:9px 8px;text-align:center;border-bottom:1px solid var(--border);}
+.cmptable th{font-size:11px;font-weight:700;color:var(--muted);position:sticky;top:0;}
+.cmpmetric{text-align:left!important;color:var(--muted);font-size:12px;white-space:nowrap;}
+.cmpval{font-weight:600;font-variant-numeric:tabular-nums;}
+.cmpval.lead{color:var(--green);font-weight:800;}
+.cmpval.warn{color:var(--red);font-weight:800;}
+
+.remindbox{background:var(--panel2);border-radius:12px;padding:12px;margin-top:8px;}
+.remindrow{display:flex;align-items:center;gap:10px;}
+.remindday{flex:none;font-size:14px;font-weight:600;padding:10px 14px;border-radius:10px;background:var(--gold-soft);color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold-line);}
+.remindrow input[type=time]{flex:1;}
+
+.chip.alarm{background:var(--gold-soft);color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold-line);display:inline-flex;align-items:center;gap:4px;}
+.bellmini{display:inline-flex;width:12px;height:12px;}
+.bellmini svg{width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none;}
+
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important;}}
 </style>
 </head>
@@ -446,11 +479,11 @@ const ICON = {
   members: <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 6.5a3 3 0 0 1 0 5.6"/><path d="M17.5 14.2A5.5 5.5 0 0 1 20.5 19"/></svg>,
   key:   <svg viewBox="0 0 24 24"><circle cx="8" cy="12" r="4"/><path d="M11.5 12H21M18 12v3M15 12v2.5"/></svg>,
   bell:  <svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2.5h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>,
-  gear:  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.5M12 18.5V21M4.2 7.5l2.2 1.2M17.6 15.3l2.2 1.2M4.2 16.5l2.2-1.2M17.6 8.7l2.2-1.2"/></svg>,
+  gear:  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5l1.4 2.3 2.6-.6.5 2.6 2.4 1.1-1 2.5 1 2.5-2.4 1.1-.5 2.6-2.6-.6L12 21.5l-1.4-2.3-2.6.6-.5-2.6L5.1 16l1-2.5-1-2.5 2.4-1.1.5-2.6 2.6.6z"/></svg>,
   back:  <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>,
   undo:  <svg viewBox="0 0 24 24"><path d="M9 7L4 12l5 5"/><path d="M4 12h11a5 5 0 0 1 0 10h-1"/></svg>,
   note:  <svg viewBox="0 0 24 24"><path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="M14 7l3 3"/></svg>,
-  request: <svg viewBox="0 0 24 24"><path d="M4 9v6h3l6 4V5L7 9H4z"/><path d="M17 8.5a4 4 0 0 1 0 7"/></svg>,
+  request: <svg viewBox="0 0 24 24"><path d="M8 11V5.5a1.5 1.5 0 0 1 3 0V10"/><path d="M11 10V4.5a1.5 1.5 0 0 1 3 0V10"/><path d="M14 10V6.5a1.5 1.5 0 0 1 3 0V13c0 3.5-2 6-5.5 6S6 16.5 6 13v-1.5a1.5 1.5 0 0 1 2-1.4"/></svg>,
 };
 const Ic = ({name,className,style}) => <span className={'ic '+(className||'')} style={style}>{ICON[name]}</span>;
 
@@ -625,7 +658,7 @@ function Login(){
       <div style={{textAlign:'center',marginBottom:22}}>
         <div className="wordmark" style={{fontSize:40}}>WIOS</div>
         <div style={{fontSize:10.5,letterSpacing:'.18em',textTransform:'uppercase',color:'var(--muted)',marginTop:8}}>
-          Ugly Donuts &amp; Corn Dogs
+          Work In One Space
         </div>
       </div>
       {mode==='in'?(
@@ -694,6 +727,12 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
   const [newTaskDue,setNewTaskDue]=useState('');
   const [newTaskLater,setNewTaskLater]=useState(false);
   const [newTaskLaterAt,setNewTaskLaterAt]=useState('');
+  // reminder / alarm: on -> a push at a chosen time. Default today, pick a time;
+  // "another day" reveals a date picker.
+  const [newTaskRemind,setNewTaskRemind]=useState(false);
+  const [newTaskRemindTime,setNewTaskRemindTime]=useState('09:00');
+  const [newTaskRemindDate,setNewTaskRemindDate]=useState('');
+  const [newTaskOtherDay,setNewTaskOtherDay]=useState(false);
   const [declining,setDeclining]=useState(null); const [declineMsg,setDeclineMsg]=useState('');
   // Optimistic removal: hide a task the instant it is deleted or marked done,
   // so the list updates even before the server round-trip / reload completes.
@@ -707,6 +746,7 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
   const coopGroups=useMemo(()=>{
     const req=[], mine=[], theirs=[], closed=[];
     (coops||[]).forEach(c=>{
+      if(hiddenIds.has(c.id)) return;
       const m=members.find(x=>x.coop_id===c.id&&x.user_id===me.id);
       const involved=!!m||c.creator_id===me.id;
       if(!involved) return;
@@ -716,7 +756,7 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
       theirs.push(c);                                        // waiting on someone else -> Waiting
     });
     return {req,mine,theirs,closed};
-  },[coops,members,me.id]);
+  },[coops,members,me.id,hiddenIds]);
 
   const [showNewRequest,setShowNewRequest]=useState(false);
   const [openReqId,setOpenReqId]=useState(null);
@@ -726,19 +766,22 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
   const reqGroups=useMemo(()=>{
     const incoming=[], todo=[], sent=[], done=[];
     (requests||[]).forEach(r=>{
+      if(hiddenIds.has(r.id)) return;
       const myT=reqTargets.find(t=>t.request_id===r.id&&t.user_id===me.id);
       const iSent=r.creator_id===me.id;
       if(iSent){
         (r.status==='done'?done:sent).push(r);
-      }
-      if(myT){
-        if(myT.status==='pending') incoming.push(r);
+      } else if(myT){
+        if(r.status==='done'){
+          // closed by the asker: keep a record in Done for anyone who took part
+          if(myT.status==='completed'||myT.status==='accepted') done.push(r);
+        } else if(myT.status==='pending') incoming.push(r);
         else if(myT.status==='accepted') todo.push(r);
-        else if(myT.status==='completed' && r.status!=='done') { /* waiting on others, hide from my active */ }
+        // myT.status==='completed' && open: waiting on others, hidden from my Active
       }
     });
     return {incoming,todo,sent,done};
-  },[requests,reqTargets,me.id]);
+  },[requests,reqTargets,me.id,hiddenIds]);
   const reqTargetsOf=id=>reqTargets.filter(t=>t.request_id===id);
 
   // this-week goals for the strip
@@ -772,21 +815,37 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
     await sb.from('wios_tasks').insert({owner_id:me.id, title, status:'active'});
     reload();
   }
+  // Build an ISO timestamp for the reminder from the date (or today) + time fields.
+  function buildAlarmISO(){
+    if(!newTaskRemind) return null;
+    const dateStr = (newTaskOtherDay&&newTaskRemindDate) ? newTaskRemindDate : isoDate(new Date());
+    const dt=new Date(`${dateStr}T${newTaskRemindTime||'09:00'}`);
+    if(isNaN(dt)) return null;
+    return dt.toISOString();
+  }
+  function resetNewTask(){
+    setNewTaskTitle(''); setNewTaskUrgent(false); setNewTaskDue('');
+    setNewTaskLater(false); setNewTaskLaterAt('');
+    setNewTaskRemind(false); setNewTaskRemindTime('09:00'); setNewTaskRemindDate(''); setNewTaskOtherDay(false);
+  }
   async function createTask(){
     const title=newTaskTitle.trim(); if(!title||busy) return;
     if(newTaskLater&&!newTaskLaterAt){ alert('Pick a date for "Set it for later".'); return; }
+    const alarmISO=buildAlarmISO();
+    if(newTaskRemind&&!alarmISO){ alert('Pick a time for the reminder.'); return; }
+    if(alarmISO&&new Date(alarmISO).getTime()<=Date.now()){ alert('That reminder time has already passed. Pick a later time.'); return; }
     setBusy(true);
     try{
       const row={owner_id:me.id, title, urgent:newTaskUrgent,
-        due_at: newTaskDue? new Date(newTaskDue).toISOString() : null};
+        due_at: newTaskDue? new Date(newTaskDue).toISOString() : null,
+        alarm_at: alarmISO, alarm_fired:false};
       if(newTaskLater&&newTaskLaterAt){
         row.status='scheduled'; row.scheduled_at=new Date(newTaskLaterAt).toISOString();
       }else{
         row.status='active';
       }
       await sb.from('wios_tasks').insert(row);
-      setShowNewTask(false); setNewTaskTitle(''); setNewTaskUrgent(false); setNewTaskDue('');
-      setNewTaskLater(false); setNewTaskLaterAt('');
+      setShowNewTask(false); resetNewTask();
       reload();
     }catch(e){ alert(e.message||'Could not add this task.'); }
     setBusy(false);
@@ -930,6 +989,7 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
     if(busy) return;
     if(!confirm('Delete this coop for everyone? This cannot be undone.')) return;
     setBusy(true);
+    hide(c.id);
     try{
       await sb.from('wios_coop_messages').delete().eq('coop_id',c.id);
       await sb.from('wios_coop_members').delete().eq('coop_id',c.id);
@@ -1030,6 +1090,7 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
     if(busy) return;
     if(!confirm('Delete this request for everyone?')) return;
     setBusy(true);
+    hide(r.id);
     try{
       await sb.from('wios_request_targets').delete().eq('request_id',r.id);
       await sb.from('wios_requests').delete().eq('id',r.id);
@@ -1143,12 +1204,14 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
       {seg==='active'&&!sortMode&&reqGroups.sent.map(r=><RequestCard key={r.id} r={r} sent/>)}
       {seg==='waiting'&&coopGroups.theirs.map(c=><CoopCard key={c.id} c={c}/>)}
       {seg==='done'&&coopGroups.closed.map(c=><CoopCard key={c.id} c={c}/>)}
-      {seg==='done'&&reqGroups.done.map(r=><RequestCard key={r.id} r={r} sent/>)}
+      {seg==='done'&&reqGroups.done.map(r=><RequestCard key={r.id} r={r} sent={r.creator_id===me.id}/>)}
 
       {lists[seg].length===0&&coopGroups.mine.length===0&&coopGroups.theirs.length===0&&
-       coopGroups.closed.length===0&&coopGroups.req.length===0&&(
+       coopGroups.closed.length===0&&coopGroups.req.length===0&&
+       !(seg==='active'&&(reqGroups.incoming.length||reqGroups.todo.length||reqGroups.sent.length))&&
+       !(seg==='done'&&reqGroups.done.length)&&(
         <div className="empty">
-          {seg==='active'&&'Nothing here yet. Tap Task or Coop to add one.'}
+          {seg==='active'&&'Nothing here yet. Tap Task, Coop, or Request to add one.'}
           {seg==='waiting'&&'Nothing is parked with someone else.'}
           {seg==='scheduled'&&'Nothing is set aside for later.'}
           {seg==='done'&&'Completed work lands here.'}
@@ -1183,6 +1246,7 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
                   <span>{daysAgo(t.waiting_since||t.created_at)}d waiting, back {inWords(t.remind_at)}</span>}
                 {t.status==='scheduled'&&<span>Starts {fmtShort(t.scheduled_at)}</span>}
                 {t.due_at&&t.status==='active'&&<span className={'chip due'+(dueSoon(t.due_at)?' urgent':'')}>Due {fmtShort(t.due_at)}</span>}
+                {t.alarm_at&&!t.alarm_fired&&t.status!=='done'&&<span className="chip alarm"><span className="bellmini">{ICON.bell}</span>{fmtShort(t.alarm_at)}</span>}
                 {t.status==='done'&&<span>Done {fmtDay(t.completed_at)}</span>}
               </div>
             </div>
@@ -1357,6 +1421,29 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
             <div className="lbl">Comes back to Active on</div>
             <input type="datetime-local" value={newTaskLaterAt} onChange={e=>setNewTaskLaterAt(e.target.value)}/>
           </>}
+          <button className={'opt'+(newTaskRemind?' on':'')} style={{marginTop:8}} onClick={()=>setNewTaskRemind(!newTaskRemind)}>
+            <Ic name="bell" className={newTaskRemind?'gold':'muted'}/>
+            <span className="grow">{newTaskRemind?'Remind me':'Remind me'}</span>
+          </button>
+          {newTaskRemind&&<div className="remindbox">
+            {!newTaskOtherDay&&(
+              <div className="remindrow">
+                <span className="remindday">Today</span>
+                <input type="time" value={newTaskRemindTime} onChange={e=>setNewTaskRemindTime(e.target.value)}/>
+              </div>
+            )}
+            {newTaskOtherDay&&<>
+              <div className="lbl">Pick a day</div>
+              <input type="date" value={newTaskRemindDate} min={isoDate(new Date())}
+                onChange={e=>setNewTaskRemindDate(e.target.value)}/>
+              <div className="lbl">At what time</div>
+              <input type="time" value={newTaskRemindTime} onChange={e=>setNewTaskRemindTime(e.target.value)}/>
+            </>}
+            <button className="btn btn-ghost btn-sm" style={{width:'100%',marginTop:8}}
+              onClick={()=>{ setNewTaskOtherDay(!newTaskOtherDay); if(newTaskOtherDay) setNewTaskRemindDate(''); }}>
+              {newTaskOtherDay?'Use today instead':'Pick another day'}
+            </button>
+          </div>}
           <div className="lbl">Finish before (optional)</div>
           <input type="datetime-local" value={newTaskDue} onChange={e=>setNewTaskDue(e.target.value)}/>
           {newTaskDue&&<div className="note" style={{marginTop:6}}>A reminder is pushed 24 hours before this time.</div>}
@@ -1547,8 +1634,8 @@ function RequestDetail({me, people, r, targets, onClose, onAccept, onDecline, on
 
         {/* asker actions */}
         {iSent&&r.status!=='done'&&(
-          <button className="btn btn-gold" style={{width:'100%',marginTop:14}} disabled={busy||!allDone} onClick={onClose2}>
-            {allDone?'Everyone is done, close it':`Waiting on ${active.length-doneN} more`}
+          <button className="btn btn-gold" style={{width:'100%',marginTop:14}} disabled={busy} onClick={onClose2}>
+            {allDone?'Everyone is done, close it':`Close it now (${doneN}/${active.length} done)`}
           </button>
         )}
       </div>
@@ -1758,6 +1845,64 @@ function CoopDetail({me, people, coop, members, onClose, reload}){
 }
 
 /* ── goals ───────────────────────────────────────────────── */
+function GoalWizard({me, reload, startFrom='year', initialParentId=null, onDismiss}){
+  // Guided setup from a given period down to weekly, each step linked to the one above.
+  // Used on Jan 1 (year->week), each semester (semester->week) and each month (month->week).
+  const ORDER=['year','semester','month','week'];
+  const steps=ORDER.slice(ORDER.indexOf(startFrom));
+  const [i,setI]=useState(0);
+  const [text,setText]=useState('');
+  const [parentId,setParentId]=useState(initialParentId);
+  const [prevTitle,setPrevTitle]=useState('');
+  const [busy,setBusy]=useState(false);
+  const t=steps[i];
+  const prompt={
+    year:'What is your goal for this year?',
+    semester:prevTitle?`What will you do this half of the year to reach "${prevTitle}"?`:'What is your goal for this half of the year?',
+    month:prevTitle?`What will you do this month to reach "${prevTitle}"?`:'What is your goal for this month?',
+    week:prevTitle?`What will you do this week to reach "${prevTitle}"?`:'What is your goal for this week?',
+  };
+  async function next(){
+    const title=text.trim(); if(!title||busy) return;
+    setBusy(true);
+    try{
+      const {data,error}=await sb.from('wios_goals').insert({
+        owner_id:me.id, period_type:t, period_key:periodKey(t),
+        title, status:'open', parent_id:parentId
+      }).select().single();
+      if(error) throw error;
+      if(i>=steps.length-1){ onDismiss&&onDismiss(); reload(); return; }
+      setParentId(data.id); setPrevTitle(title); setText(''); setI(i+1);
+    }catch(e){ alert(e.message||'Could not save.'); }
+    setBusy(false);
+  }
+  async function skip(){
+    if(busy) return; onDismiss&&onDismiss(); reload();
+  }
+  return (
+    <div className="wiz">
+      <div className="wizdots">
+        {steps.map((s,idx)=>(
+          <span key={s} className={'wizdot'+(idx<i?' done':idx===i?' on':'')}/>
+        ))}
+      </div>
+      <div className="wizstep">{PLABEL[t]} goal</div>
+      <div className="wizq">{prompt[t]}</div>
+      <textarea autoFocus rows="3" placeholder="Type your goal" value={text}
+        onChange={e=>setText(e.target.value)}/>
+      <button className="btn btn-gold" style={{width:'100%',marginTop:6}} disabled={!text.trim()||busy} onClick={next}>
+        {i>=steps.length-1?(busy?'Saving...':'Finish'):'Next'}
+      </button>
+      <button className="btn btn-ghost btn-sm" style={{width:'100%',marginTop:8}} onClick={skip}>
+        {i>0?'Stop here for now':'Not now'}
+      </button>
+      <div className="note" style={{textAlign:'center',marginTop:12}}>
+        You can edit or add more any time.
+      </div>
+    </div>
+  );
+}
+
 function GoalOverview({me, goals, reload, setGoalType}){
   // Show the current goals for every period, top-down (year -> semester -> month -> week),
   // with child goals nested under the parent they were linked to.
@@ -1776,7 +1921,11 @@ function GoalOverview({me, goals, reload, setGoalType}){
     return by;
   },[goals]);
 
-  const childrenOf=(pid)=>goals.filter(g=>g.parent_id===pid&&g.status!=='deleted'&&g.status!=='kept');
+  const curKey=useMemo(()=>{ const k={}; order.forEach(t=>k[t]=periodKey(t)); return k; },[]);
+  // a child only shows in the overview if it belongs to the CURRENT period of its own type,
+  // so last period's linked goals do not keep hanging under a bigger goal forever.
+  const childrenOf=(pid)=>goals.filter(g=>g.parent_id===pid&&g.status!=='deleted'&&g.status!=='kept'
+    &&g.period_key===curKey[g.period_type]);
   const parentCandidates=(type)=>{ const pt=parentType[type]; return pt?(cur[pt]||[]):[]; };
   async function setParent(g,pid){
     if(busy) return; setBusy(true);
@@ -1785,6 +1934,30 @@ function GoalOverview({me, goals, reload, setGoalType}){
     setBusy(false);
   }
   const anyGoals=order.some(t=>(cur[t]||[]).length>0);
+
+  // Decide whether to run the setup wizard, and from which period.
+  // Broadest current period that has no goal set drives it: no year goal -> full
+  // year->week on Jan 1; no semester goal -> semester->week each half; no month goal
+  // -> month->week each month. Weekly-only gaps are not forced (add those inline).
+  // A per-period dismissal is remembered so it does not nag after "Not now".
+  const wizard=useMemo(()=>{
+    const dismissed=(k)=>{ try{ return localStorage.getItem('wios-wiz-'+k)==='1'; }catch(e){ return false; } };
+    for(const t of ['year','semester','month']){
+      if((cur[t]||[]).length===0 && !dismissed(t+':'+curKey[t])){
+        // link the wizard's top step under the existing parent, if there's exactly one
+        const pt=parentType[t];
+        const parent = pt && (cur[pt]||[]).length===1 ? cur[pt][0].id : null;
+        return {startFrom:t, parentId:parent, dismissKey:t+':'+curKey[t]};
+      }
+    }
+    return null;
+  },[cur,curKey]);
+  const [wizClosed,setWizClosed]=useState(false);
+  function dismissWizard(){
+    if(wizard){ try{ localStorage.setItem('wios-wiz-'+wizard.dismissKey,'1'); }catch(e){} }
+    setWizClosed(true);
+  }
+  const showWizard = wizard && !wizClosed;
 
   function GoalLine({g, depth}){
     const kids=childrenOf(g.id);
@@ -1827,14 +2000,28 @@ function GoalOverview({me, goals, reload, setGoalType}){
       <div className="sub" style={{marginBottom:14}}>
         Your direction, top down. Link each smaller goal to a bigger one so you can see how this week rolls up to the year.
       </div>
-      {!anyGoals&&(
+      {showWizard&&(
+        <div style={{marginBottom:18}}>
+          <GoalWizard me={me} reload={reload} startFrom={wizard.startFrom}
+            initialParentId={wizard.parentId} onDismiss={dismissWizard}/>
+        </div>
+      )}
+      {!showWizard&&!anyGoals&&(
         <div className="empty" style={{padding:'20px 14px'}}>
           No goals yet. Open a period below and add your first one.
         </div>
       )}
       {order.map(t=>{
         const list=cur[t]||[];
-        const roots = t==='year' ? list : list.filter(g=>!g.parent_id);
+        // while the wizard is up, skip the empty period sections it is about to fill,
+        // so we do not show "Nothing set yet" right next to the wizard asking for it
+        if(showWizard && list.length===0) return null;
+        // a goal is a root here if it has no parent, OR its parent is not in the
+        // current visible set (e.g. it was linked to a past period). That keeps every
+        // current goal on screen instead of vanishing under a stale link.
+        const visibleIds=new Set(order.flatMap(p=>(cur[p]||[]).map(g=>g.id)));
+        const roots = t==='year' ? list
+          : list.filter(g=>!g.parent_id||!visibleIds.has(g.parent_id));
         return (
           <div key={t} className="ovsect">
             <button className="ovhead" onClick={()=>setGoalType(t)}>
@@ -1963,6 +2150,11 @@ function GoalsTab({me, goals, gps, reload, goalType, setGoalType, tasks}){
       )}
 
       <div className="sect">This {PWORD[type]}, {periodLabel(type,key)}</div>
+      <div className="qadd" style={{marginBottom:12}}>
+        <input placeholder={`Add a ${PWORD[type]} goal...`} value={text}
+          onChange={e=>setText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addGoal()}/>
+        <button className="btn btn-gold" onClick={addGoal} aria-label="Add goal">+</button>
+      </div>
       {cur.length>0&&(
         <div style={{margin:'0 2px 12px'}}>
           <div style={{fontSize:12,color:'var(--muted)'}}>{doneN} of {cur.length} completed</div>
@@ -1982,11 +2174,6 @@ function GoalsTab({me, goals, gps, reload, goalType, setGoalType, tasks}){
           <button className="xbtn" onClick={()=>removeGoal(g)} aria-label="Remove goal">×</button>
         </div>
       ))}
-      <div className="qadd" style={{marginTop:4}}>
-        <input placeholder={`Add a ${PWORD[type]} goal...`} value={text}
-          onChange={e=>setText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addGoal()}/>
-        <button className="btn btn-gold" onClick={addGoal} aria-label="Add goal">+</button>
-      </div>
 
       {type!=='week'&&prevAll.length>0&&!showReview&&(()=>{
         const hit=prevAll.filter(g=>g.status==='completed');
@@ -2210,6 +2397,7 @@ function RecurringEditSheet({edit, me, timeOpts, onClose, reload}){
 function TeamTab({me, people, coops, members}){
   const [data,setData]=useState(null);
   const [open,setOpen]=useState(null);
+  const [view,setView]=useState('compare');
   useEffect(()=>{ (async()=>{
     const [t,g,r]=await Promise.all([
       sb.from('wios_tasks').select('*'),
@@ -2276,11 +2464,90 @@ function TeamTab({me, people, coops, members}){
     };
   }
 
+  const rows=people.map(p=>({p, s:stats(p)}));
+
+  // rankings for the compare view: highlight the leader on each metric
+  const maxOf=(sel)=>Math.max(1,...rows.map(r=>sel(r.s)||0));
+  const compareMetrics=[
+    {k:'doneWeek', label:'Done this week', sel:s=>s.doneWeek},
+    {k:'doneMonth', label:'Done this month', sel:s=>s.doneMonth},
+    {k:'active', label:'Active now', sel:s=>s.active},
+    {k:'stale', label:'Sitting 7d+', sel:s=>s.stale, bad:true},
+    {k:'coopDoneMonth', label:'Coops closed', sel:s=>s.coopDoneMonth},
+    {k:'topStreak', label:'Best streak', sel:s=>s.topStreak},
+  ];
+
   return (
     <div>
       <h3 style={{margin:'2px 2px 2px',fontSize:19}}>Team Performance</h3>
       <div className="note" style={{margin:'0 2px 12px'}}>Admin view, only you can see this. Scores are a signal from recorded work, not a verdict.</div>
-      {people.map(p=>{
+      <Seg items={[{k:'compare',l:'Compare'},{k:'detail',l:'One by one'}]} value={view} onChange={setView}/>
+
+      {view==='compare'&&(
+        <div>
+          {/* Activity leaderboard */}
+          <div className="sect">Activity now</div>
+          {rows.slice().sort((a,b)=>b.s.score-a.s.score).map(({p,s})=>{
+            const lvlColor=s.level==='Active'?'var(--green)':s.level==='Steady'?'var(--gold)':'var(--muted)';
+            return (
+              <div key={p.id} className="cmprow" onClick={()=>{setView('detail');setOpen(p.id);}}>
+                <div className="cmpname">
+                  <span className="chip role">{p.role}</span>
+                  <span className="grow">{first(p.name)}</span>
+                  {s.stale>0&&<span className="chip urgent">{s.stale}</span>}
+                  {s.topStreak>0&&<span className="streak">🔥{s.topStreak}</span>}
+                </div>
+                <div className="cmpbar"><i style={{width:s.score+'%',background:lvlColor}}/></div>
+                <span className="cmpscore" style={{color:lvlColor}}>{s.level}</span>
+              </div>
+            );
+          })}
+
+          {/* Side-by-side metric grid */}
+          <div className="sect" style={{marginTop:18}}>Side by side</div>
+          <div className="cmpscroll">
+            <table className="cmptable">
+              <thead>
+                <tr>
+                  <th></th>
+                  {rows.map(({p})=><th key={p.id}>{first(p.name)}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {compareMetrics.map(m=>{
+                  const best=m.bad?Math.min(...rows.map(r=>m.sel(r.s)||0)):maxOf(m.sel);
+                  return (
+                    <tr key={m.k}>
+                      <td className="cmpmetric">{m.label}</td>
+                      {rows.map(({p,s})=>{
+                        const v=m.sel(s)||0;
+                        const lead=!m.bad&&v>0&&v===best;
+                        const worst=m.bad&&v>0&&v===best;
+                        return <td key={p.id} className={'cmpval'+(lead?' lead':'')+(worst?' warn':'')}>{v}</td>;
+                      })}
+                    </tr>
+                  );
+                })}
+                <tr>
+                  <td className="cmpmetric">Week goals</td>
+                  {rows.map(({p,s})=><td key={p.id} className="cmpval">{s.wPct===null?'--':s.wPct+'%'}</td>)}
+                </tr>
+                <tr>
+                  <td className="cmpmetric">Month goals</td>
+                  {rows.map(({p,s})=><td key={p.id} className="cmpval">{s.mPct===null?'--':s.mPct+'%'}</td>)}
+                </tr>
+                <tr>
+                  <td className="cmpmetric">Avg to finish</td>
+                  {rows.map(({p,s})=><td key={p.id} className="cmpval">{s.avgDays===null?'--':(s.avgDays<1?'<1d':Math.round(s.avgDays)+'d')}</td>)}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div className="note" style={{margin:'10px 2px 0'}}>Tap a name above to see their detail. Green is the top on that row, red flags what is being sat on.</div>
+        </div>
+      )}
+
+      {view==='detail'&&people.map(p=>{
         const s=stats(p); const isOpen=open===p.id;
         const acts=s.tasks.filter(x=>x.status==='active');
         const waits=s.tasks.filter(x=>x.status==='waiting');
@@ -2827,16 +3094,26 @@ function App(){
   // Track the on-screen keyboard height (iOS) so fixed bars sit on top of it.
   useEffect(()=>{
     const vv=window.visualViewport;
-    if(!vv) return;
-    const onResize=()=>{
-      const kb=Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    const setKb=(kb)=>{
       document.documentElement.style.setProperty('--kb', kb+'px');
       document.body.classList.toggle('kb-open', kb>80);
     };
-    onResize();
-    vv.addEventListener('resize', onResize);
-    vv.addEventListener('scroll', onResize);
-    return ()=>{ vv.removeEventListener('resize', onResize); vv.removeEventListener('scroll', onResize); };
+    const onResize=()=>{
+      if(!vv) return;
+      const kb=Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      setKb(kb);
+    };
+    // Focus/blur is a reliable signal that the keyboard is up, even when the
+    // visualViewport math is flaky inside an installed PWA. If we know an input is
+    // focused but have no measured height yet, assume a typical keyboard so the tab
+    // bar still gets out of the way.
+    const isField=el=>el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA');
+    const onFocus=e=>{ if(isField(e.target)){ document.body.classList.add('kb-open'); if(vv) onResize(); } };
+    const onBlur=()=>{ setTimeout(()=>{ if(!isField(document.activeElement)){ document.body.classList.remove('kb-open'); document.documentElement.style.setProperty('--kb','0px'); } },50); };
+    if(vv){ onResize(); vv.addEventListener('resize', onResize); vv.addEventListener('scroll', onResize); }
+    document.addEventListener('focusin', onFocus);
+    document.addEventListener('focusout', onBlur);
+    return ()=>{ if(vv){ vv.removeEventListener('resize', onResize); vv.removeEventListener('scroll', onResize); } document.removeEventListener('focusin', onFocus); document.removeEventListener('focusout', onBlur); };
   },[]);
 
   // deep link from a push click: /?coop=<id> opens that coop
