@@ -132,6 +132,47 @@ create table if not exists public.wios_request_targets (
 );
 create index if not exists wios_req_targets_idx on public.wios_request_targets(user_id, status);
 
+-- ── 3c. Role projects (many people share a project, each owns a role of tasks) ──
+create table if not exists public.wios_role_projects (
+  id uuid primary key default gen_random_uuid(),
+  creator_id uuid not null references public.wios_profiles(id) on delete cascade,
+  title text not null,
+  description text,
+  due_at timestamptz,                        -- the project deadline (set at creation)
+  status text not null default 'active' check (status in ('active','done')),
+  created_at timestamptz not null default now(),
+  closed_at timestamptz
+);
+create index if not exists wios_role_projects_idx on public.wios_role_projects(creator_id, status);
+alter table public.wios_role_projects add column if not exists due_at timestamptz;
+
+create table if not exists public.wios_role_members (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.wios_role_projects(id) on delete cascade,
+  user_id uuid not null references public.wios_profiles(id) on delete cascade,
+  status text not null default 'working' check (status in ('working','completed','acknowledged')),
+  completed_at timestamptz,
+  acknowledged_at timestamptz,
+  unique (project_id, user_id)
+);
+create index if not exists wios_role_members_idx on public.wios_role_members(user_id, status);
+alter table public.wios_role_members add column if not exists acknowledged_at timestamptz;
+alter table public.wios_role_members drop constraint if exists wios_role_members_status_check;
+alter table public.wios_role_members add constraint wios_role_members_status_check check (status in ('working','completed','acknowledged'));
+
+create table if not exists public.wios_role_items (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.wios_role_projects(id) on delete cascade,
+  assignee_id uuid not null references public.wios_profiles(id) on delete cascade,  -- whose role
+  title text not null,
+  due_at timestamptz,
+  done boolean not null default false,
+  added_by uuid references public.wios_profiles(id) on delete set null,
+  approved boolean not null default true,   -- false when someone else added to your role and you have not approved
+  created_at timestamptz not null default now()
+);
+create index if not exists wios_role_items_idx on public.wios_role_items(project_id, assignee_id);
+
 -- ── 4. Goals ────────────────────────────────────────────────
 create table if not exists public.wios_goals (
   id uuid primary key default gen_random_uuid(),
@@ -360,6 +401,62 @@ create policy wios_req_targets_update on public.wios_request_targets for update 
 drop policy if exists wios_req_targets_delete on public.wios_request_targets;
 create policy wios_req_targets_delete on public.wios_request_targets for delete using (
   exists (select 1 from public.wios_requests r where r.id = request_id and r.creator_id = auth.uid()));
+
+-- role projects: any member or the creator can see and act; items are open so anyone
+-- in the project can add to another person's role (that person then approves).
+create or replace function public.wios_is_role_member(pid uuid) returns boolean
+  language sql security definer stable set search_path = public as $$
+    select exists (select 1 from public.wios_role_members m where m.project_id = pid and m.user_id = auth.uid());
+  $$;
+alter table public.wios_role_projects enable row level security;
+alter table public.wios_role_members enable row level security;
+alter table public.wios_role_items enable row level security;
+
+drop policy if exists wios_rp_select on public.wios_role_projects;
+create policy wios_rp_select on public.wios_role_projects for select using (
+  creator_id = auth.uid() or public.wios_is_admin() or public.wios_is_role_member(id));
+drop policy if exists wios_rp_insert on public.wios_role_projects;
+create policy wios_rp_insert on public.wios_role_projects for insert with check (creator_id = auth.uid());
+drop policy if exists wios_rp_update on public.wios_role_projects;
+create policy wios_rp_update on public.wios_role_projects for update using (
+  creator_id = auth.uid() or public.wios_is_role_member(id));
+drop policy if exists wios_rp_delete on public.wios_role_projects;
+create policy wios_rp_delete on public.wios_role_projects for delete using (
+  creator_id = auth.uid() or public.wios_is_admin());
+
+drop policy if exists wios_rm_select on public.wios_role_members;
+create policy wios_rm_select on public.wios_role_members for select using (
+  user_id = auth.uid() or public.wios_is_admin() or public.wios_is_role_member(project_id)
+  or exists (select 1 from public.wios_role_projects p where p.id = project_id and p.creator_id = auth.uid()));
+drop policy if exists wios_rm_insert on public.wios_role_members;
+create policy wios_rm_insert on public.wios_role_members for insert with check (
+  exists (select 1 from public.wios_role_projects p where p.id = project_id and p.creator_id = auth.uid())
+  or public.wios_is_role_member(project_id));
+drop policy if exists wios_rm_update on public.wios_role_members;
+create policy wios_rm_update on public.wios_role_members for update using (
+  user_id = auth.uid()
+  or exists (select 1 from public.wios_role_projects p where p.id = project_id and p.creator_id = auth.uid()));
+drop policy if exists wios_rm_delete on public.wios_role_members;
+create policy wios_rm_delete on public.wios_role_members for delete using (
+  user_id = auth.uid()
+  or exists (select 1 from public.wios_role_projects p where p.id = project_id and p.creator_id = auth.uid()));
+
+drop policy if exists wios_ri_select on public.wios_role_items;
+create policy wios_ri_select on public.wios_role_items for select using (
+  public.wios_is_admin() or public.wios_is_role_member(project_id)
+  or exists (select 1 from public.wios_role_projects p where p.id = project_id and p.creator_id = auth.uid()));
+drop policy if exists wios_ri_insert on public.wios_role_items;
+create policy wios_ri_insert on public.wios_role_items for insert with check (
+  public.wios_is_role_member(project_id)
+  or exists (select 1 from public.wios_role_projects p where p.id = project_id and p.creator_id = auth.uid()));
+drop policy if exists wios_ri_update on public.wios_role_items;
+create policy wios_ri_update on public.wios_role_items for update using (
+  public.wios_is_role_member(project_id)
+  or exists (select 1 from public.wios_role_projects p where p.id = project_id and p.creator_id = auth.uid()));
+drop policy if exists wios_ri_delete on public.wios_role_items;
+create policy wios_ri_delete on public.wios_role_items for delete using (
+  public.wios_is_role_member(project_id)
+  or exists (select 1 from public.wios_role_projects p where p.id = project_id and p.creator_id = auth.uid()));
 
 -- recurrings + logs: owner full access, admins read-all
 drop policy if exists wios_rec_select on public.wios_recurrings;

@@ -186,8 +186,19 @@ body.kb-open .tabbar{transform:translateX(-50%) translateY(200%);pointer-events:
 .player .av{width:38px;height:38px;border-radius:50%;background:var(--panel2);box-shadow:inset 0 0 0 1px var(--border2);
   display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;color:var(--muted);}
 .player.acc .av{color:var(--text);box-shadow:inset 0 0 0 1px var(--gold-line);}
+.player.pend .av{border-style:dashed;box-shadow:inset 0 0 0 1px var(--border2);opacity:.75;}
+.player.pend .nm{color:var(--muted2);}
+.pendtag{font-size:8.5px;line-height:1.1;color:var(--muted2);text-align:center;max-width:60px;
+  font-weight:600;letter-spacing:.01em;}
 .player .nm{font-size:10px;color:var(--muted);font-weight:600;white-space:nowrap;}
 .player .slot{height:11px;display:flex;align-items:center;}
+.playeradd{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:54px;flex:none;background:none;}
+.playeradd .av.addplus{width:38px;height:38px;border-radius:50%;border:1.5px dashed var(--gold-line);
+  background:var(--gold-soft);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:400;}
+.playeradd .nm{font-size:10px;color:var(--gold);font-weight:700;}
+.playeradd .slot{height:11px;}
+.btn-pass{background:#EFEBFA;color:#6E56C7;box-shadow:inset 0 0 0 1.5px #D8CFF0;}
+.btn-pass:active{background:#E6DEF6;}
 
 /* checklists: goals + daily */
 .crow{display:flex;align-items:center;gap:10px;padding:8px 12px 8px 6px;background:var(--panel);
@@ -286,7 +297,14 @@ body.kb-open .askwrap{bottom:calc(var(--kb, 0px) + env(safe-area-inset-bottom) +
 .card.task{transition:box-shadow .15s, opacity .15s;}
 .card.task.dragging{opacity:.4;}
 .card.task.dragover{box-shadow:0 0 0 2px var(--gold);}
-.draghandle{flex:none;color:var(--muted2);font-size:18px;cursor:grab;padding:0 4px;touch-action:none;}
+.draghandle{flex:none;color:var(--muted2);cursor:grab;padding:2px 6px 2px 0;touch-action:none;
+  display:flex;align-items:center;align-self:stretch;margin:-4px 2px -4px -2px;}
+.draghandle svg{width:20px;height:20px;fill:currentColor;stroke:none;}
+.draghandle:active{cursor:grabbing;color:var(--gold);}
+.card.task.dragging{opacity:.9;box-shadow:0 6px 20px rgba(0,0,0,.16);transform:scale(1.015);}
+.chip.wait{background:#EEF1F5;color:#5B6B7C;}
+.chip.later{background:#EFF4FF;color:#3E6FC7;}
+.swipearea{min-height:40vh;}
 /* card action buttons: mark-done (green) + delete (red), always on the right */
 .cardacts{display:flex;align-items:center;gap:6px;flex:none;margin:-2px -4px -2px 6px;}
 .actbtn{width:38px;height:38px;flex:none;display:flex;align-items:center;justify-content:center;
@@ -329,13 +347,13 @@ body.kb-open .askwrap{bottom:calc(var(--kb, 0px) + env(safe-area-inset-bottom) +
 @keyframes pulse2{0%,100%{opacity:1}50%{opacity:.55}}
 @keyframes slide{0%{transform:translateX(-120%)}100%{transform:translateX(360%)}}
 
-/* this-week goal strip */
-.goalstrip{display:flex;align-items:center;gap:11px;width:100%;text-align:left;padding:11px 13px;margin-bottom:11px;
-  border-radius:14px;background:var(--amber-soft);box-shadow:inset 0 0 0 1px var(--amber-line);color:var(--text);}
-.goalstrip:active{background:rgba(224,145,47,.2);}
-.gschip{flex:none;width:26px;height:26px;color:var(--amber);display:flex;align-items:center;justify-content:center;}
+/* this-week goal strip: calm blue highlight with a soft accent, emphasised but not alarming */
+.goalstrip{display:flex;align-items:center;gap:11px;width:100%;text-align:left;padding:12px 14px;margin-bottom:11px;
+  border-radius:14px;background:#EEF3FB;box-shadow:inset 0 0 0 1px #D5E2F5;border-left:3px solid var(--gold);color:var(--text);}
+.goalstrip:active{background:#E3ECF8;}
+.gschip{flex:none;width:26px;height:26px;color:var(--gold);display:flex;align-items:center;justify-content:center;}
 .gschip svg{width:20px;height:20px;stroke:currentColor;stroke-width:1.9;fill:none;}
-.gshead{font-size:12px;font-weight:700;color:var(--amber);letter-spacing:.02em;}
+.gshead{font-size:12px;font-weight:700;color:var(--gold);letter-spacing:.02em;}
 .gsbody{font-size:13px;color:var(--text);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
 /* add task / add coop row */
@@ -345,6 +363,15 @@ body.kb-open .askwrap{bottom:calc(var(--kb, 0px) + env(safe-area-inset-bottom) +
 .addbtn:active{background:rgba(46,111,214,.16);}
 .addbtn svg{width:19px;height:19px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
 .addbtn svg{width:17px;height:17px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+/* four harmonious tints so each type is distinct without clashing */
+.ab-task{background:#EAF1FC;color:#2E6FD6;box-shadow:inset 0 0 0 1.5px #CBDDF7;}
+.ab-task:active{background:#DCE9FA;}
+.ab-coop{background:#E6F4F1;color:#2E8B77;box-shadow:inset 0 0 0 1.5px #C4E6DE;}
+.ab-coop:active{background:#D6ECE7;}
+.ab-role{background:#FBF0DD;color:#C08327;box-shadow:inset 0 0 0 1.5px #EFDBB6;}
+.ab-role:active{background:#F6E8CC;}
+.ab-request{background:#EFEBFA;color:#6E56C7;box-shadow:inset 0 0 0 1.5px #D8CFF0;}
+.ab-request:active{background:#E6DEF6;}
 
 /* coop card inside tasks */
 .coopcard .coopmark{flex:none;width:26px;height:26px;display:flex;align-items:center;justify-content:center;color:var(--gold);}
@@ -448,6 +475,41 @@ body.kb-open .askwrap{bottom:calc(var(--kb, 0px) + env(safe-area-inset-bottom) +
 .wizcheck{display:inline-flex;width:16px;height:16px;color:var(--gold);flex:none;}
 .wizcheck svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.6;fill:none;stroke-linecap:round;stroke-linejoin:round;}
 
+.addrow4{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
+.addrow4 .addbtn{font-size:12.5px;gap:5px;padding:12px 4px;flex-direction:column;}
+.addrow4 .addbtn svg{width:18px;height:18px;}
+.rolecard .coopmark{color:var(--gold);}
+.rolecol{background:var(--panel2);border-radius:12px;padding:12px;margin-bottom:12px;}
+.rolehd{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.roleitem{display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-top:1px solid var(--border);}
+.roleitem:first-of-type{border-top:none;}
+.roleitem .gcheck{flex:none;margin-top:1px;}
+.roleitem .meta{margin-top:3px;}
+.miniapprove{flex:none;font-size:11.5px;font-weight:700;color:var(--gold);padding:5px 9px;border-radius:8px;
+  background:var(--gold-soft);box-shadow:inset 0 0 0 1px var(--gold-line);}
+.roleaddbtn{display:block;width:100%;text-align:left;font-size:13px;color:var(--gold);font-weight:600;
+  padding:9px 2px 2px;}
+.rolebanner{background:var(--gold-soft);color:var(--text);border-radius:12px;padding:12px 14px;
+  font-size:13.5px;margin-bottom:14px;box-shadow:inset 0 0 0 1px var(--gold-line);}
+.roleadd{padding-top:8px;}
+
+.gmetricrow{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+.gmetric{font-size:12px;padding:7px 11px;border-radius:20px;background:var(--panel2);color:var(--muted2);font-weight:600;}
+.gmetric.on{background:var(--gold-soft);color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold-line);}
+.gbars{display:flex;flex-direction:column;gap:9px;}
+.gbarrow{display:flex;align-items:center;gap:10px;}
+.gbarname{width:70px;flex:none;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.gbartrack{flex:1;height:20px;border-radius:6px;background:var(--border);overflow:hidden;}
+.gbartrack i{display:block;height:100%;border-radius:6px;background:var(--gold);transition:width .3s;}
+.gbarval{flex:none;width:28px;text-align:right;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;}
+.trendgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.trendcard{background:var(--panel2);border-radius:12px;padding:11px;}
+.trendname{font-size:12.5px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.spark{display:flex;align-items:flex-end;gap:4px;height:44px;}
+.sparkbar{flex:1;background:var(--gold);border-radius:3px 3px 0 0;min-height:6px;opacity:.85;}
+.sparkbar:last-child{background:var(--gold);opacity:1;}
+.trendfoot{font-size:11px;color:var(--muted);margin-top:6px;}
+
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important;}}
 </style>
 </head>
@@ -495,6 +557,8 @@ const ICON = {
   back:  <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>,
   undo:  <svg viewBox="0 0 24 24"><path d="M9 7L4 12l5 5"/><path d="M4 12h11a5 5 0 0 1 0 10h-1"/></svg>,
   note:  <svg viewBox="0 0 24 24"><path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="M14 7l3 3"/></svg>,
+  grip:  <svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>,
+  roles: <svg viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5h7"/></svg>,
   request: <svg viewBox="0 0 24 24"><path d="M8 11V5.5a1.5 1.5 0 0 1 3 0V10"/><path d="M11 10V4.5a1.5 1.5 0 0 1 3 0V10"/><path d="M14 10V6.5a1.5 1.5 0 0 1 3 0V13c0 3.5-2 6-5.5 6S6 16.5 6 13v-1.5a1.5 1.5 0 0 1 2-1.4"/></svg>,
 };
 const Ic = ({name,className,style}) => <span className={'ic '+(className||'')} style={style}>{ICON[name]}</span>;
@@ -716,8 +780,8 @@ function Login(){
 }
 
 /* ── tasks ───────────────────────────────────────────────── */
-function TasksTab({me, people, tasks, coops, members, goals, requests, reqTargets, reload, openCoopId, setOpenCoopId, gotoGoals}){
-  const [seg,setSeg]=useState('active');
+function TasksTab({me, people, tasks, coops, members, goals, requests, reqTargets, roleProjects, roleMembers, roleItems, reload, openCoopId, setOpenCoopId, gotoGoals}){
+  const [seg,setSeg]=useState('all');
   const [quick,setQuick]=useState('');
   const [sel,setSel]=useState(null);
   const [mode,setMode]=useState('main');
@@ -725,9 +789,9 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
   const [schedAt,setSchedAt]=useState('');
   const [sendTo,setSendTo]=useState([]); const [sendMsg,setSendMsg]=useState('');
   const [busy,setBusy]=useState(false);
-  const [sortMode,setSortMode]=useState(false);
   const [dragId,setDragId]=useState(null);
-  const [dragOver,setDragOver]=useState(null);
+  const [order,setOrder]=useState(null);
+  const dragRef=useRef({id:null,ids:null});
   const [dNotes,setDNotes]=useState('');
   const [dSubs,setDSubs]=useState([]);
   const [newSub,setNewSub]=useState('');
@@ -745,6 +809,7 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
   const [newTaskRemindTime,setNewTaskRemindTime]=useState('09:00');
   const [newTaskRemindDate,setNewTaskRemindDate]=useState('');
   const [newTaskOtherDay,setNewTaskOtherDay]=useState(false);
+  const [alarmEdit,setAlarmEdit]=useState('');   // datetime-local value when editing a task's alarm
   const [declining,setDeclining]=useState(null); const [declineMsg,setDeclineMsg]=useState('');
   // Optimistic removal: hide a task the instant it is deleted or marked done,
   // so the list updates even before the server round-trip / reload completes.
@@ -796,12 +861,41 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
   },[requests,reqTargets,me.id,hiddenIds]);
   const reqTargetsOf=id=>reqTargets.filter(t=>t.request_id===id);
 
+  // ── Role projects ──
+  const [showNewRole,setShowNewRole]=useState(false);
+  const [openRoleId,setOpenRoleId]=useState(null);
+  const roleMembersOf=id=>roleMembers.filter(m=>m.project_id===id);
+  const roleItemsOf=id=>roleItems.filter(it=>it.project_id===id);
+  const myRoleMember=id=>roleMembers.find(m=>m.project_id===id&&m.user_id===me.id);
+  // an item counts toward a person's completion only if approved AND done
+  const roleGroups=useMemo(()=>{
+    const active=[], waiting=[], done=[];
+    (roleProjects||[]).forEach(p=>{
+      if(hiddenIds.has(p.id)) return;
+      const mem=roleMembers.find(m=>m.project_id===p.id&&m.user_id===me.id);
+      const involved=!!mem||p.creator_id===me.id;
+      if(!involved) return;
+      // I have acknowledged (pressed Done) -> it lives in my Done
+      if(mem&&mem.status==='acknowledged'){ done.push(p); return; }
+      if(p.status==='done'&&!mem){ done.push(p); return; }   // creator-only, no role
+      const mems=roleMembers.filter(m=>m.project_id===p.id);
+      const everyoneDone = mems.length>0 && mems.every(m=>m.status==='completed'||m.status==='acknowledged');
+      const myPending=roleItems.some(it=>it.project_id===p.id&&it.assignee_id===me.id&&!it.approved);
+      // everyone finished -> back to Active for me to acknowledge (unless a new item pulled me back anyway)
+      if(everyoneDone){ active.push(p); return; }
+      if(mem&&mem.status==='completed'&&!myPending){ waiting.push(p); return; }
+      active.push(p);
+    });
+    return {active,waiting,done};
+  },[roleProjects,roleMembers,roleItems,me.id,hiddenIds]);
+
   // this-week goals for the strip
   const weekGoals=useMemo(()=>{
     const key=periodKey('week');
     return (goals||[]).filter(g=>g.period_type==='week'&&g.period_key===key&&g.status!=='deleted'&&g.status!=='kept');
   },[goals]);
   const weekDone=weekGoals.filter(g=>g.status==='completed').length;
+  const weekOpen=weekGoals.filter(g=>g.status!=='completed');
 
   const lists=useMemo(()=>{
     const by={active:[],waiting:[],scheduled:[],done:[]};
@@ -818,6 +912,12 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
     by.scheduled.sort((a,b)=>new Date(a.scheduled_at||0)-new Date(b.scheduled_at||0));
     by.done.sort((a,b)=>new Date(b.completed_at||0)-new Date(a.completed_at||0));
     by.done=by.done.slice(0,40);
+    // "All" = everything still open in one view: every Active, plus Later and Waiting
+    // items that come due within the next 7 days, so nothing near-term is out of sight.
+    const weekAhead=Date.now()+7*24*3600000;
+    const soonLater=by.scheduled.filter(t=>t.scheduled_at&&new Date(t.scheduled_at).getTime()<=weekAhead);
+    const soonWaiting=by.waiting.filter(t=>t.remind_at&&new Date(t.remind_at).getTime()<=weekAhead);
+    by.all=[...by.active, ...soonWaiting, ...soonLater];
     return by;
   },[tasks,hiddenIds]);
 
@@ -863,24 +963,40 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
     setBusy(false);
   }
 
-  // Drag to reorder within the active list. On drop, rewrite sort_order for all.
-  async function commitDrag(){
-    const from=dragId, over=dragOver;
-    setDragId(null); setDragOver(null);
-    if(!from||!over||from===over) return;
-    const arr=lists.active.slice();
-    const fi=arr.findIndex(t=>t.id===from), oi=arr.findIndex(t=>t.id===over);
-    if(fi<0||oi<0) return;
-    const [moved]=arr.splice(fi,1);
-    arr.splice(oi,0,moved);
-    await Promise.all(arr.map((t,idx)=>
-      sb.from('wios_tasks').update({sort_order:idx}).eq('id',t.id)));
-    reload();
+  // Reorder the Active list by dragging a task's handle (works on touch and mouse).
+  // We track the drag on a ref, reorder a live copy of the id list as the finger moves
+  // over other cards, then write sort_order once on release.
+  function activeIds(){ return lists.active.map(t=>t.id); }
+  function startDrag(id, e){
+    e.preventDefault(); e.stopPropagation();
+    dragRef.current={id, ids:activeIds()};
+    setDragId(id); setOrder(activeIds());
+    window.addEventListener('pointermove', onDragMove);
+    window.addEventListener('pointerup', endDrag, {once:true});
   }
-  async function clearManualOrder(){
-    await Promise.all(lists.active.map(t=>
-      sb.from('wios_tasks').update({sort_order:null}).eq('id',t.id)));
-    setSortMode(false);
+  function onDragMove(e){
+    const d=dragRef.current; if(!d.id) return;
+    const el=document.elementFromPoint(e.clientX, e.clientY);
+    const card=el&&el.closest&&el.closest('.card.task');
+    if(!card||!card.dataset.tid) return;
+    const overId=card.dataset.tid;
+    if(overId===d.id) return;
+    const ids=d.ids.slice();
+    const fi=ids.indexOf(d.id), oi=ids.indexOf(overId);
+    if(fi<0||oi<0) return;
+    ids.splice(fi,1); ids.splice(oi,0,d.id);
+    d.ids=ids; setOrder(ids);
+  }
+  async function endDrag(){
+    window.removeEventListener('pointermove', onDragMove);
+    const d=dragRef.current; const ids=d.ids; dragRef.current={id:null,ids:null};
+    setDragId(null); setOrder(null);
+    if(!ids) return;
+    // only write if order actually changed
+    const before=activeIds();
+    if(ids.join()===before.join()) return;
+    await Promise.all(ids.map((id,idx)=>
+      sb.from('wios_tasks').update({sort_order:idx}).eq('id',id)));
     reload();
   }
   async function delTask(t){
@@ -906,6 +1022,20 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
     waiting_since:t.waiting_since||nowIso(), reminded:false, urgent:false});
   const toScheduled = t => schedAt && patch(t,{status:'scheduled',
     scheduled_at:new Date(schedAt).toISOString(), reminded:false});
+  // datetime-local value from a Date, in local time (for prefilling the alarm picker)
+  function localDT(d){
+    const p=n=>String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+  async function setAlarm(t, val){
+    if(!val){ alert('Pick a date and time.'); return; }
+    const iso=new Date(val).toISOString();
+    if(new Date(iso).getTime()<=Date.now()){ alert('That time has already passed. Pick a later time.'); return; }
+    await patch(t,{alarm_at:iso, alarm_fired:false});
+  }
+  async function clearAlarm(t){
+    await patch(t,{alarm_at:null, alarm_fired:false});
+  }
 
   async function sendTask(t){
     if(!sendTo.length || busy) return;
@@ -1111,6 +1241,139 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
     setBusy(false);
   }
 
+  // ── role project actions ──
+  async function toggleRoleItem(it){
+    if(busy) return; setBusy(true);
+    try{ await sb.from('wios_role_items').update({done:!it.done}).eq('id',it.id); reload(); }
+    catch(e){ alert(e.message||'Could not update.'); }
+    setBusy(false);
+  }
+  async function addRoleItem(projectId, assigneeId, title){
+    if(busy) return;
+    const t=(title||'').trim(); if(!t) return;
+    setBusy(true);
+    try{
+      const mineRole = assigneeId===me.id;
+      await sb.from('wios_role_items').insert({
+        project_id:projectId, assignee_id:assigneeId, title:t,
+        added_by:me.id, approved: mineRole,   // adding to my own role is auto-approved
+      });
+      if(!mineRole){
+        notifyUsers([assigneeId], `${cLabel(me.id)} added a task to your role`, t, null);
+        await sb.from('wios_role_members').update({status:'working',completed_at:null})
+          .eq('project_id',projectId).eq('user_id',assigneeId).eq('status','completed');
+      }
+      reload();
+    }catch(e){ alert(e.message||'Could not add.'); }
+    setBusy(false);
+  }
+  async function approveRoleItem(it){
+    if(busy) return; setBusy(true);
+    try{ await sb.from('wios_role_items').update({approved:true}).eq('id',it.id); reload(); }
+    catch(e){ alert(e.message||'Could not approve.'); }
+    setBusy(false);
+  }
+  async function deleteRoleItem(it){
+    if(busy) return; setBusy(true);
+    try{ await sb.from('wios_role_items').delete().eq('id',it.id); reload(); }
+    catch(e){ alert(e.message||'Could not delete.'); }
+    setBusy(false);
+  }
+  async function markRoleMine(p){
+    // mark my role complete: all my approved items must be done
+    const myItems=roleItems.filter(it=>it.project_id===p.id&&it.assignee_id===me.id&&it.approved);
+    if(myItems.length===0){ alert('Add at least one task to your role first.'); return; }
+    if(myItems.some(it=>!it.done)){ alert('Check off all your tasks before marking your role complete.'); return; }
+    if(busy) return; setBusy(true);
+    try{
+      await sb.from('wios_role_members').update({status:'completed',completed_at:nowIso()})
+        .eq('project_id',p.id).eq('user_id',me.id);
+      // if everyone is now complete, bring the project back to Active for all and push
+      const mems=roleMembers.filter(m=>m.project_id===p.id);
+      const others=mems.filter(m=>m.user_id!==me.id);
+      const allDone=others.every(m=>m.status==='completed'||m.status==='acknowledged');
+      if(allDone && mems.length>0){
+        notifyUsers(mems.map(m=>m.user_id).filter(x=>x!==me.id), `Everyone finished: ${p.title}`, 'Check it and mark Done', null);
+      } else {
+        notifyUsers([p.creator_id].filter(x=>x!==me.id), `${cLabel(me.id)} finished their part`, p.title, null);
+      }
+      reload();
+    }catch(e){ alert(e.message||'Could not update.'); }
+    setBusy(false);
+  }
+  async function reopenRoleMine(p){
+    if(busy) return; setBusy(true);
+    try{ await sb.from('wios_role_members').update({status:'working',completed_at:null})
+      .eq('project_id',p.id).eq('user_id',me.id); reload(); }
+    catch(e){ alert(e.message||'Could not reopen.'); }
+    setBusy(false);
+  }
+  async function acknowledgeRole(p){
+    // I press Done: my card moves to Done. Others stay Active until each acknowledges.
+    if(busy) return; setBusy(true);
+    try{
+      await sb.from('wios_role_members').update({status:'acknowledged',acknowledged_at:nowIso()})
+        .eq('project_id',p.id).eq('user_id',me.id);
+      // when everyone has acknowledged, mark the project itself done (for records)
+      const mems=roleMembers.filter(m=>m.project_id===p.id);
+      const others=mems.filter(m=>m.user_id!==me.id);
+      if(others.every(m=>m.status==='acknowledged')){
+        await sb.from('wios_role_projects').update({status:'done',closed_at:nowIso()}).eq('id',p.id);
+      }
+      reload();
+    }catch(e){ alert(e.message||'Could not update.'); }
+    setBusy(false);
+  }
+  async function deleteRole(p){
+    if(busy) return;
+    if(!confirm('Delete this project for everyone?')) return;
+    setBusy(true); hide(p.id);
+    try{
+      await sb.from('wios_role_items').delete().eq('project_id',p.id);
+      await sb.from('wios_role_members').delete().eq('project_id',p.id);
+      await sb.from('wios_role_projects').delete().eq('id',p.id);
+      reload();
+    }catch(e){ alert(e.message||'Could not delete.'); }
+    setBusy(false);
+  }
+
+  function RoleCard({p}){
+    const mems=roleMembersOf(p.id);
+    const items=roleItemsOf(p.id);
+    const doneMembers=mems.filter(m=>m.status==='completed'||m.status==='acknowledged').length;
+    const myItems=items.filter(it=>it.assignee_id===me.id&&it.approved);
+    const myDone=myItems.filter(it=>it.done).length;
+    const myPending=items.some(it=>it.assignee_id===me.id&&!it.approved);
+    const myMem=mems.find(m=>m.user_id===me.id);
+    const everyoneDone=mems.length>0&&mems.every(m=>m.status==='completed'||m.status==='acknowledged');
+    const iAcknowledged=myMem&&myMem.status==='acknowledged';
+    return (
+      <div className="card rolecard" onClick={()=>setOpenRoleId(p.id)}>
+        <div className="row">
+          <span className="coopmark" aria-label="Role project">{ICON.roles}</span>
+          <div className="grow">
+            <div className="tt">{p.title}</div>
+            <div className="meta">
+              {iAcknowledged&&<span className="chip ok">Done</span>}
+              {!iAcknowledged&&everyoneDone&&<span className="chip ok">Everyone finished</span>}
+              <span className="chip sub">{doneMembers}/{mems.length} done</span>
+              {p.due_at&&<span className={'chip due'+(dueSoon(p.due_at)?' urgent':'')}>Due {fmtShort(p.due_at)}</span>}
+              {myPending&&<span className="chip urgent">New for you</span>}
+              {!myPending&&!iAcknowledged&&myItems.length>0&&<span>My part {myDone}/{myItems.length}</span>}
+            </div>
+          </div>
+          {p.creator_id===me.id&&(
+            <button className="trash" onClick={e=>{e.stopPropagation();deleteRole(p);}} aria-label="Delete project">{ICON.trash}</button>
+          )}
+        </div>
+        {!iAcknowledged&&everyoneDone&&(
+          <button className="btn btn-gold btn-sm" style={{width:'100%',marginTop:10}} disabled={busy}
+            onClick={e=>{e.stopPropagation();acknowledgeRole(p);}}>Everyone finished, mark Done</button>
+        )}
+      </div>
+    );
+  }
+
   function RequestCard({r, incoming, sent}){
     const targets=reqTargetsOf(r.id);
     const active=targets.filter(t=>t.status!=='declined');
@@ -1150,12 +1413,31 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
     );
   }
 
+  const allCount=lists.all.length+coopGroups.mine.length+coopGroups.theirs.length+reqGroups.todo.length+reqGroups.sent.length;
   const segItems=[
+    {k:'all',l:`All${allCount?` ${allCount}`:''}`},
     {k:'active',l:`Active${(lists.active.length+coopGroups.mine.length+reqGroups.todo.length)?` ${lists.active.length+coopGroups.mine.length+reqGroups.todo.length}`:''}`},
     {k:'waiting',l:`Waiting${(lists.waiting.length+coopGroups.theirs.length)?` ${lists.waiting.length+coopGroups.theirs.length}`:''}`},
     {k:'scheduled',l:'Later'},
     {k:'done',l:'Done'},
   ];
+  // Swipe left/right on the list area to move between tabs. Ignores mostly-vertical
+  // drags (scrolling) and drags that begin on a task's drag handle.
+  const swipe=useRef({x:0,y:0,on:false});
+  function onTouchStart(e){
+    if(dragId) return;                              // a reorder drag is in progress
+    if(e.target.closest && e.target.closest('.draghandle')) return;
+    const t=e.touches[0]; swipe.current={x:t.clientX,y:t.clientY,on:true};
+  }
+  function onTouchEnd(e){
+    if(!swipe.current.on) return; swipe.current.on=false;
+    const t=e.changedTouches[0];
+    const dx=t.clientX-swipe.current.x, dy=t.clientY-swipe.current.y;
+    if(Math.abs(dx)<55 || Math.abs(dx)<Math.abs(dy)*1.5) return;   // not a clear horizontal swipe
+    const idx=segItems.findIndex(s=>s.k===seg);
+    const nextIdx = dx<0 ? Math.min(segItems.length-1, idx+1) : Math.max(0, idx-1);
+    if(nextIdx!==idx) setSeg(segItems[nextIdx].k);
+  }
 
   return (
     <div>
@@ -1164,27 +1446,36 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
           <span className="gschip">{ICON.goals}</span>
           <div className="grow">
             <div className="gshead">This week ({weekDone}/{weekGoals.length})</div>
-            <div className="gsbody">{weekGoals.map(g=>g.title).join('  ·  ')}</div>
+            <div className="gsbody">
+              {weekOpen.length>0
+                ? weekOpen.map(g=>g.title).join('  ·  ')
+                : 'All done for this week'}
+            </div>
           </div>
           <span style={{color:'var(--muted2)',flex:'none'}}>›</span>
         </button>
       )}
 
-      <div className="addrow addrow3">
-        <button className="btn addbtn" onClick={()=>{ setNewTaskTitle(''); setShowNewTask(true); }}>
+      <div className="addrow addrow4">
+        <button className="btn addbtn ab-task" onClick={()=>{ setNewTaskTitle(''); setShowNewTask(true); }}>
           {ICON.tasks}<span>Task</span>
         </button>
-        <button className="btn addbtn" onClick={()=>{ setSendTo([]); setSendMsg(''); setShowNewCoop(true); }}>
+        <button className="btn addbtn ab-coop" onClick={()=>{ setSendTo([]); setSendMsg(''); setShowNewCoop(true); }}>
           {ICON.coop}<span>Coop</span>
         </button>
-        <button className="btn addbtn" onClick={()=>setShowNewRequest(true)}>
+        <button className="btn addbtn ab-role" onClick={()=>setShowNewRole(true)}>
+          {ICON.roles}<span>Role</span>
+        </button>
+        <button className="btn addbtn ab-request" onClick={()=>setShowNewRequest(true)}>
           {ICON.request}<span>Request</span>
         </button>
       </div>
 
-      <Seg items={segItems} value={seg} onChange={v=>{setSeg(v); if(v!=='active') setSortMode(false);}}/>
+      <Seg items={segItems} value={seg} onChange={v=>setSeg(v)}/>
 
-      {seg==='active'&&(coopGroups.req.length>0||reqGroups.incoming.length>0)&&(
+      <div className="swipearea" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+
+      {(seg==='active'||seg==='all')&&(coopGroups.req.length>0||reqGroups.incoming.length>0)&&(
         <>
           <div className="sect">Requests <span className="n">{coopGroups.req.length+reqGroups.incoming.length}</span></div>
           {reqGroups.incoming.map(r=><RequestCard key={r.id} r={r} incoming/>)}
@@ -1192,37 +1483,23 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
         </>
       )}
 
-      {seg==='active'&&lists.active.length>1&&(
-        <div className="sortbar">
-          {sortMode?(
-            <>
-              <span className="note" style={{flex:1}}>Drag the handle to reorder. Top is highest priority.</span>
-              <button className="btn btn-ghost btn-sm" style={{flex:'none',padding:'0 12px'}} onClick={clearManualOrder}>Reset</button>
-              <button className="btn btn-gold btn-sm" style={{flex:'none',padding:'0 14px'}} onClick={()=>setSortMode(false)}>Done</button>
-            </>
-          ):(
-            <>
-              <span className="note" style={{flex:1}}>Sorted by urgency, then newest.</span>
-              <button className="btn btn-line btn-sm" style={{flex:'none',padding:'0 14px'}} onClick={()=>setSortMode(true)}>
-                Reorder
-              </button>
-            </>
-          )}
-        </div>
-      )}
-
-      {seg==='active'&&!sortMode&&coopGroups.mine.map(c=><CoopCard key={c.id} c={c}/>)}
-      {seg==='active'&&!sortMode&&reqGroups.todo.map(r=><RequestCard key={r.id} r={r}/>)}
-      {seg==='active'&&!sortMode&&reqGroups.sent.map(r=><RequestCard key={r.id} r={r} sent/>)}
-      {seg==='waiting'&&coopGroups.theirs.map(c=><CoopCard key={c.id} c={c}/>)}
+      {(seg==='active'||seg==='all')&&coopGroups.mine.map(c=><CoopCard key={c.id} c={c}/>)}
+      {(seg==='active'||seg==='all')&&reqGroups.todo.map(r=><RequestCard key={r.id} r={r}/>)}
+      {(seg==='active'||seg==='all')&&reqGroups.sent.map(r=><RequestCard key={r.id} r={r} sent/>)}
+      {(seg==='active'||seg==='all')&&roleGroups.active.map(p=><RoleCard key={p.id} p={p}/>)}
+      {(seg==='waiting'||seg==='all')&&coopGroups.theirs.map(c=><CoopCard key={c.id} c={c}/>)}
+      {(seg==='waiting'||seg==='all')&&roleGroups.waiting.map(p=><RoleCard key={p.id} p={p}/>)}
       {seg==='done'&&coopGroups.closed.map(c=><CoopCard key={c.id} c={c}/>)}
       {seg==='done'&&reqGroups.done.map(r=><RequestCard key={r.id} r={r} sent={r.creator_id===me.id}/>)}
+      {seg==='done'&&roleGroups.done.map(p=><RoleCard key={p.id} p={p}/>)}
 
       {lists[seg].length===0&&coopGroups.mine.length===0&&coopGroups.theirs.length===0&&
        coopGroups.closed.length===0&&coopGroups.req.length===0&&
-       !(seg==='active'&&(reqGroups.incoming.length||reqGroups.todo.length||reqGroups.sent.length))&&
-       !(seg==='done'&&reqGroups.done.length)&&(
+       !((seg==='active'||seg==='all')&&(reqGroups.incoming.length||reqGroups.todo.length||reqGroups.sent.length||roleGroups.active.length))&&
+       !((seg==='waiting'||seg==='all')&&roleGroups.waiting.length)&&
+       !(seg==='done'&&(reqGroups.done.length||roleGroups.done.length))&&(
         <div className="empty">
+          {seg==='all'&&'Nothing on your plate. Tap Task, Coop, or Request to add one.'}
           {seg==='active'&&'Nothing here yet. Tap Task, Coop, or Request to add one.'}
           {seg==='waiting'&&'Nothing is parked with someone else.'}
           {seg==='scheduled'&&'Nothing is set aside for later.'}
@@ -1230,39 +1507,39 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
         </div>
       )}
 
-      {lists[seg].map((t,idx)=>{
+      {(seg==='active'&&order ? order.map(id=>lists.active.find(t=>t.id===id)).filter(Boolean) : lists[seg]).map((t,idx)=>{
         const subs=Array.isArray(t.subtasks)?t.subtasks:[];
         const subDone=subs.filter(s=>s.done).length;
         const dragging=dragId===t.id;
+        const canDrag = seg==='active';
         return (
-        <div key={t.id}
-          className={'card task'+(dragging?' dragging':'')+(dragOver===t.id&&dragId!==t.id?' dragover':'')}
-          draggable={sortMode&&seg==='active'}
-          onDragStart={()=>setDragId(t.id)}
-          onDragEnd={commitDrag}
-          onDragOver={e=>{ if(sortMode){ e.preventDefault(); setDragOver(t.id); } }}
-          onClick={()=>!sortMode&&openSheet(t)}>
+        <div key={t.id} data-tid={t.id}
+          className={'card task'+(dragging?' dragging':'')}
+          onClick={()=>!dragId&&openSheet(t)}>
           <div className="row">
-            {sortMode&&seg==='active'&&<span className="draghandle" aria-label="Drag">⠿</span>}
+            {canDrag&&<span className="draghandle" aria-label="Drag to reorder"
+              onPointerDown={e=>startDrag(t.id,e)} onClick={e=>e.stopPropagation()}>{ICON.grip}</span>}
             <div className="grow">
               <div className={'tt'+(t.status==='done'?' done':'')}>{t.title}</div>
               <div className="meta">
+                {seg==='all'&&t.status==='waiting'&&<span className="chip wait">Waiting</span>}
+                {seg==='all'&&t.status==='scheduled'&&<span className="chip later">Later</span>}
                 {t.urgent&&<span className="chip urgent">Urgent</span>}
                 {t.reminded&&t.status==='active'&&<span className="chip back">Followup</span>}
                 {t.is_system&&<span className="chip sys">{t.system_kind==='recurring'?'Recurring':'Goals'}</span>}
                 {subs.length>0&&<span className="chip sub">{subDone}/{subs.length}</span>}
                 {t.notes&&<span className="notemark" aria-label="Has notes">{ICON.note}</span>}
-                {t.status==='active'&&<span className={'age'+(daysAgo(t.created_at)>=7?' old':'')}>
+                {(t.status==='active')&&<span className={'age'+(daysAgo(t.created_at)>=7?' old':'')}>
                   {ageLabel(t.created_at)}</span>}
                 {t.status==='waiting'&&
                   <span>{daysAgo(t.waiting_since||t.created_at)}d waiting, back {inWords(t.remind_at)}</span>}
                 {t.status==='scheduled'&&<span>Starts {fmtShort(t.scheduled_at)}</span>}
-                {t.due_at&&t.status==='active'&&<span className={'chip due'+(dueSoon(t.due_at)?' urgent':'')}>Due {fmtShort(t.due_at)}</span>}
+                {t.due_at&&(t.status==='active')&&<span className={'chip due'+(dueSoon(t.due_at)?' urgent':'')}>Due {fmtShort(t.due_at)}</span>}
                 {t.alarm_at&&!t.alarm_fired&&t.status!=='done'&&<span className="chip alarm"><span className="bellmini">{ICON.bell}</span>{fmtShort(t.alarm_at)}</span>}
                 {t.status==='done'&&<span>Done {fmtDay(t.completed_at)}</span>}
               </div>
             </div>
-            {!sortMode&&(
+            {!dragId&&(
               <div className="cardacts">
                 {t.status!=='done'&&(
                   <button className="actbtn done" onClick={e=>{e.stopPropagation();markDone(t);}} aria-label="Mark done">{ICON.check}</button>
@@ -1273,6 +1550,7 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
           </div>
         </div>
       );})}
+      </div>
 
       {sel&&(
         <Sheet onClose={()=>setSel(null)}>
@@ -1343,12 +1621,22 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
                   <span className="grow">{sel.urgent?'Remove urgent':'Mark urgent, pin to top'}</span>
                 </button>
               )}
+              {sel.status!=='done'&&(
+                <button className="opt" onClick={()=>{
+                  // preload the picker with the current alarm, or a sensible default
+                  const base=sel.alarm_at?new Date(sel.alarm_at):new Date(Date.now()+3600000);
+                  setAlarmEdit(localDT(base)); setMode('alarm');
+                }}>
+                  <Ic name="bell" className="muted"/>
+                  <span className="grow">{sel.alarm_at&&!sel.alarm_fired?`Reminder ${fmtShort(sel.alarm_at)}`:'Set a reminder alarm'}</span>
+                </button>
+              )}
               {sel.status!=='done'&&!sel.is_system&&<>
                 <button className="opt" onClick={()=>setMode('waiting')}>
                   <Ic name="clock" className="muted"/><span className="grow">Waiting on someone, remind me later</span>
                 </button>
                 <button className="opt" onClick={()=>setMode('schedule')}>
-                  <Ic name="calendar" className="muted"/><span className="grow">Set aside until a date</span>
+                  <Ic name="calendar" className="muted"/><span className="grow">Set it for later, hide until a date</span>
                 </button>
                 <button className="opt" onClick={()=>setMode('send')}>
                   <Ic name="handoff" className="gold"/><span className="grow">Bring in a teammate, turn into a coop</span>
@@ -1392,6 +1680,23 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
               <input type="datetime-local" value={schedAt} onChange={e=>setSchedAt(e.target.value)}/>
               <div style={{height:12}}/>
               <button className="btn btn-gold" style={{width:'100%'}} onClick={()=>toScheduled(sel)}>Set aside</button>
+            </div>
+          )}
+
+          {mode==='alarm'&&(
+            <div>
+              <div className="lbl">Remind me at</div>
+              <input type="datetime-local" value={alarmEdit} onChange={e=>setAlarmEdit(e.target.value)}/>
+              <div style={{height:12}}/>
+              <button className="btn btn-gold" style={{width:'100%'}} disabled={busy}
+                onClick={()=>setAlarm(sel, alarmEdit)}>{sel.alarm_at&&!sel.alarm_fired?'Update reminder':'Set reminder'}</button>
+              {sel.alarm_at&&!sel.alarm_fired&&(
+                <button className="btn btn-line btn-sm" style={{width:'100%',marginTop:8}} disabled={busy}
+                  onClick={()=>clearAlarm(sel)}>Turn off reminder</button>
+              )}
+              <div className="note" style={{marginTop:12}}>
+                You get a push at that time. You can come back here any time to change it or turn it off.
+              </div>
             </div>
           )}
 
@@ -1482,6 +1787,23 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
           onAccept={()=>acceptRequest(r)} onDecline={()=>declineRequest(r)}
           onComplete={()=>completeRequest(r)} onClose2={()=>{closeRequest(r);setOpenReqId(null);}}
           onDelete={()=>{deleteRequest(r);setOpenReqId(null);}} busy={busy}/>;
+      })()}
+
+      {showNewRole&&(
+        <NewRoleSheet me={me} people={people} onClose={()=>setShowNewRole(false)} reload={reload}/>
+      )}
+
+      {openRoleId&&(()=>{
+        const p=(roleProjects||[]).find(x=>x.id===openRoleId);
+        if(!p){ return null; }
+        return <RoleDetail me={me} people={people} p={p}
+          mems={roleMembersOf(p.id)} items={roleItemsOf(p.id)} busy={busy}
+          onClose={()=>setOpenRoleId(null)}
+          onToggle={toggleRoleItem} onAdd={addRoleItem} onApprove={approveRoleItem}
+          onDeleteItem={deleteRoleItem} onMarkMine={()=>markRoleMine(p)}
+          onReopenMine={()=>reopenRoleMine(p)}
+          onAck={()=>{acknowledgeRole(p);setOpenRoleId(null);}}
+          onDelete={()=>{deleteRole(p);setOpenRoleId(null);}}/>;
       })()}
 
       {declining&&(
@@ -1655,10 +1977,173 @@ function RequestDetail({me, people, r, targets, onClose, onAccept, onDecline, on
   );
 }
 
+function NewRoleSheet({me, people, onClose, reload}){
+  const [title,setTitle]=useState(''); const [desc,setDesc]=useState('');
+  const [team,setTeam]=useState([]); const [due,setDue]=useState(''); const [busy,setBusy]=useState(false);
+  const label=id=>{ const p=people.find(x=>x.id===id); return p?`${p.role} ${first(p.name)}`:'someone'; };
+  const toggle=id=>setTeam(a=>a.includes(id)?a.filter(x=>x!==id):[...a,id]);
+  async function create(){
+    const t=title.trim(); if(!t||busy) return;
+    if(!due){ alert('Set a due date for the project.'); return; }
+    setBusy(true);
+    try{
+      const {data:proj,error}=await sb.from('wios_role_projects').insert({
+        creator_id:me.id, title:t, description:desc||null, due_at:new Date(due).toISOString(), status:'active'
+      }).select().single();
+      if(error) throw error;
+      const ids=Array.from(new Set([me.id, ...team]));
+      await sb.from('wios_role_members').insert(ids.map(uid=>({project_id:proj.id, user_id:uid, status:'working'})));
+      notifyUsers(team, `${label(me.id)} started a project`, t, null);
+      onClose(); reload();
+    }catch(e){ alert(e.message||'Could not create.'); }
+    setBusy(false);
+  }
+  return (
+    <Sheet onClose={onClose}>
+      <h3>New role project</h3>
+      <div className="sub">A shared project where each person owns a role. Everyone works at the same time on their own tasks. When all are done, it comes back to Active for each person to mark Done.</div>
+      <input placeholder="Project name (e.g. Spring exhibition)" value={title} onChange={e=>setTitle(e.target.value)}/>
+      <textarea rows="2" placeholder="What is this project? (optional)" value={desc} onChange={e=>setDesc(e.target.value)}/>
+      <div className="lbl">Project due date <span style={{color:'var(--gold)'}}>required</span></div>
+      <input type="datetime-local" value={due} onChange={e=>setDue(e.target.value)}/>
+      <div className="lbl">Who is on it {team.length>0&&<span style={{color:'var(--gold)'}}>{team.length} picked</span>}</div>
+      <PersonGrid people={people} value={team} onChange={toggle} exclude={me.id} multi/>
+      <div className="note" style={{marginTop:8}}>You are included automatically. Everyone can add tasks to their own role, or to someone else's (that person approves it).</div>
+      <div style={{height:8}}/>
+      <button className="btn btn-gold" style={{width:'100%'}} disabled={!title.trim()||!due||busy} onClick={create}>
+        {busy?'Creating...':'Create project'}
+      </button>
+    </Sheet>
+  );
+}
+
+function RoleDetail({me, people, p, mems, items, busy, onClose, onToggle, onAdd, onApprove, onDeleteItem, onMarkMine, onReopenMine, onAck, onDelete}){
+  const label=id=>{ const pr=people.find(x=>x.id===id); return pr?`${pr.role} ${first(pr.name)}`:'someone'; };
+  const roleLabel=id=>{ const pr=people.find(x=>x.id===id); return pr?pr.role:'?'; };
+  const myMem=mems.find(m=>m.user_id===me.id);
+  const iCreated=p.creator_id===me.id;
+  const everyoneDone=mems.length>0&&mems.every(m=>m.status==='completed'||m.status==='acknowledged');
+  const iAcknowledged=myMem&&myMem.status==='acknowledged';
+  const [addFor,setAddFor]=useState(null);
+  const [aTitle,setATitle]=useState('');
+  function submitAdd(){
+    if(!aTitle.trim()){ alert('Type a task.'); return; }
+    onAdd(p.id, addFor, aTitle);
+    setATitle(''); setAddFor(null);
+  }
+  const memItems=id=>items.filter(it=>it.assignee_id===id).sort((a,b)=>new Date(a.created_at||0)-new Date(b.created_at||0));
+  return (
+    <div className="detail">
+      <div className="dhdr">
+        <button className="iconbtn" onClick={onClose} aria-label="Back">{ICON.back}</button>
+        <div className="grow">
+          <div className="tt">{p.title}</div>
+          <div className="meta">
+            <span className="coopmark" aria-label="Role project" style={{width:16,height:16}}>{ICON.roles}</span>
+            <span>Role project</span>
+            {p.due_at&&<span className={'chip due'+(dueSoon(p.due_at)?' urgent':'')}>Due {fmtShort(p.due_at)}</span>}
+          </div>
+        </div>
+        {iCreated&&(
+          <button className="iconbtn" onClick={onDelete} disabled={busy} aria-label="Delete" style={{color:'var(--red)'}}>{ICON.trash}</button>
+        )}
+      </div>
+
+      <div className="dbody">
+        {p.description&&<div className="reqmsg">"{p.description}"</div>}
+        {everyoneDone&&!iAcknowledged&&(
+          <div className="rolebanner">Everyone finished their part. Check the work, then mark it Done for yourself.</div>
+        )}
+
+        {mems.map(m=>{
+          const its=memItems(m.user_id);
+          const mine=m.user_id===me.id;
+          const approved=its.filter(it=>it.approved);
+          const doneN=approved.filter(it=>it.done).length;
+          const memDone=m.status==='completed'||m.status==='acknowledged';
+          return (
+            <div key={m.user_id} className="rolecol">
+              <div className="rolehd">
+                <span className="chip role">{roleLabel(m.user_id)}</span>
+                <span className="grow">{first((people.find(x=>x.id===m.user_id)||{}).name||'')}{mine?' (you)':''}</span>
+                {memDone
+                  ? <span className="chip ok">{m.status==='acknowledged'?'Done':'Finished'}</span>
+                  : <span className="chip sub">{doneN}/{approved.length}</span>}
+              </div>
+              {its.length===0&&<div className="note" style={{padding:'2px 0 6px'}}>No tasks yet.</div>}
+              {its.map(it=>{
+                const canCheck = mine && it.approved && !iAcknowledged;
+                const needsApproval = mine && !it.approved;
+                return (
+                  <div key={it.id} className="roleitem">
+                    <button className={'gcheck'+(it.done?' on':'')} disabled={!canCheck||busy}
+                      onClick={()=>canCheck&&onToggle(it)} aria-label="Toggle">✓</button>
+                    <div className="grow">
+                      <div className={it.done?'ovdone':''} style={{fontSize:14}}>{it.title}</div>
+                      <div className="meta">
+                        {needsApproval&&<span className="chip urgent">{label(it.added_by)} added</span>}
+                        {!mine&&it.added_by===me.id&&!it.approved&&<span className="chip sub">waiting approval</span>}
+                      </div>
+                    </div>
+                    {needsApproval&&(
+                      <button className="miniapprove" disabled={busy} onClick={()=>onApprove(it)} aria-label="Approve">Approve</button>
+                    )}
+                    {(mine||it.added_by===me.id||iCreated)&&(
+                      <button className="xbtn" disabled={busy} onClick={()=>onDeleteItem(it)} aria-label="Remove">×</button>
+                    )}
+                  </div>
+                );
+              })}
+              {!iAcknowledged&&(
+                addFor===m.user_id?(
+                  <div className="roleadd">
+                    <input placeholder="Task title" value={aTitle} onChange={e=>setATitle(e.target.value)}
+                      onKeyDown={e=>e.key==='Enter'&&submitAdd()}/>
+                    <div className="row" style={{gap:8,marginTop:8}}>
+                      <button className="btn btn-line btn-sm" style={{flex:1}} onClick={()=>{setAddFor(null);setATitle('');}}>Cancel</button>
+                      <button className="btn btn-gold btn-sm" style={{flex:1}} disabled={busy} onClick={submitAdd}>Add</button>
+                    </div>
+                  </div>
+                ):(
+                  <button className="roleaddbtn" onClick={()=>{setAddFor(m.user_id);setATitle('');}}>
+                    + Add a task{mine?'':` for ${first((people.find(x=>x.id===m.user_id)||{}).name||'them')}`}
+                  </button>
+                )
+              )}
+            </div>
+          );
+        })}
+
+        {/* my completion + done controls */}
+        {!iAcknowledged&&myMem&&myMem.status!=='completed'&&!everyoneDone&&(
+          <button className="btn btn-gold" style={{width:'100%',marginTop:14}} disabled={busy} onClick={onMarkMine}>
+            Mark my part completed
+          </button>
+        )}
+        {!iAcknowledged&&myMem&&myMem.status==='completed'&&!everyoneDone&&(
+          <>
+            <div className="note" style={{textAlign:'center',marginTop:14}}>Your part is done. Waiting on the others.</div>
+            <button className="btn btn-line btn-sm" style={{width:'100%',marginTop:8}} disabled={busy} onClick={onReopenMine}>Reopen my part</button>
+          </>
+        )}
+        {!iAcknowledged&&everyoneDone&&(
+          <button className="btn btn-gold" style={{width:'100%',marginTop:14}} disabled={busy} onClick={onAck}>
+            Mark Done for me
+          </button>
+        )}
+        {iAcknowledged&&(
+          <div className="note" style={{textAlign:'center',marginTop:14}}>You marked this Done.</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function CoopDetail({me, people, coop, members, onClose, reload}){
   const [msgs,setMsgs]=useState([]); const [text,setText]=useState('');
   const [passing,setPassing]=useState(false); const [passTo,setPassTo]=useState(null); const [passMsg,setPassMsg]=useState('');
   const [passRemind,setPassRemind]=useState(0);   // hours; 0 = no reminder
+  const [adding,setAdding]=useState(false); const [addPick,setAddPick]=useState([]); const [addMsg,setAddMsg]=useState('');
   const [busy,setBusy]=useState(false);
   const endRef=useRef(null);
   const label=id=>{ const p=people.find(x=>x.id===id); return p?`${p.role} ${first(p.name)}`:'someone'; };
@@ -1686,8 +2171,11 @@ function CoopDetail({me, people, coop, members, onClose, reload}){
   if(!coop) return null;
   const iAmHolder=coop.holder_id===me.id&&coop.status==='active';
   const acceptedIds=members.filter(m=>m.status==='accepted').map(m=>m.user_id);
+  const pendingIds=members.filter(m=>m.status==='pending').map(m=>m.user_id);
+  // everyone accepted (they can hold the ball). Creator is always in.
   const everyone=[...new Set(acceptedIds.concat([coop.creator_id]))];
-  const invited=coop.pending_id&&!everyone.includes(coop.pending_id)?coop.pending_id:null;
+  // everyone on the coop at all, accepted or still invited, for display and pass targets
+  const roster=[...new Set(everyone.concat(pendingIds).concat(coop.pending_id?[coop.pending_id]:[]))];
 
   async function comment(){
     const body=text.trim(); if(!body||busy) return;
@@ -1723,6 +2211,29 @@ function CoopDetail({me, people, coop, members, onClose, reload}){
       setPassing(false); setPassTo(null); setPassMsg(''); setPassRemind(0);
       await reload(); loadMsgs();
     }catch(e){ alert(e.message||'Could not pass this on.'); }
+    setBusy(false);
+  }
+  async function addMembers(){
+    if(!addPick.length||busy) return; setBusy(true);
+    try{
+      // some of the picked people may have an old row (e.g. declined earlier). Upsert by
+      // inserting the ones with no row and re-inviting the ones that already have one.
+      for(const uid of addPick){
+        const existing=members.find(m=>m.user_id===uid);
+        if(existing){
+          await sb.from('wios_coop_members').update({status:'pending',invited_by:me.id,invite_message:addMsg||null})
+            .eq('coop_id',coop.id).eq('user_id',uid);
+        }else{
+          await sb.from('wios_coop_members').insert({coop_id:coop.id,user_id:uid,status:'pending',
+            invited_by:me.id,invite_message:addMsg||null});
+        }
+      }
+      await sb.from('wios_coop_messages').insert({coop_id:coop.id,user_id:me.id,kind:'system',
+        body:`${label(me.id)} invited ${addPick.map(label).join(', ')}`});
+      notifyUsers(addPick, `Added to a coop: ${coop.title}`, addMsg||`by ${label(me.id)}`, coop.id);
+      setAdding(false); setAddPick([]); setAddMsg('');
+      await reload(); loadMsgs();
+    }catch(e){ alert(e.message||'Could not add.'); }
     setBusy(false);
   }
   async function closeCoop(){
@@ -1769,28 +2280,28 @@ function CoopDetail({me, people, coop, members, onClose, reload}){
       </div>
 
       <div className="court">
-        {everyone.map(id=>{
+        {roster.map(id=>{
           const p=people.find(x=>x.id===id); if(!p) return null;
           const m=members.find(x=>x.user_id===id);
           const acc=id===coop.creator_id||(m&&m.status==='accepted');
+          const pend=!acc&&(m&&m.status==='pending'||id===coop.pending_id);
           return (
-            <div key={id} className={'player'+(acc?' acc':'')}>
+            <div key={id} className={'player'+(acc?' acc':'')+(pend?' pend':'')}>
               <div className="av">{p.role}</div>
               <div className="nm">{first(p.name)}</div>
-              <div className="slot">{coop.holder_id===id&&coop.status==='active'&&<span className="ball"/>}</div>
+              {pend
+                ? <div className="pendtag">Waiting to accept</div>
+                : <div className="slot">{coop.holder_id===id&&coop.status==='active'&&<span className="ball"/>}</div>}
             </div>
           );
         })}
-        {invited&&(()=>{
-          const p=people.find(x=>x.id===invited); if(!p) return null;
-          return (
-            <div key={invited} className="player">
-              <div className="av">{p.role}</div>
-              <div className="nm">{first(p.name)} ?</div>
-              <div className="slot"/>
-            </div>
-          );
-        })()}
+        {coop.status==='active'&&(
+          <button className="playeradd" onClick={()=>setAdding(true)} aria-label="Add someone">
+            <div className="av addplus">+</div>
+            <div className="nm">Add</div>
+            <div className="slot"/>
+          </button>
+        )}
       </div>
 
       <div className="thread">
@@ -1817,7 +2328,7 @@ function CoopDetail({me, people, coop, members, onClose, reload}){
 
       {iAmHolder&&(
         <div className="holderbar">
-          <button className="btn btn-line" disabled={busy} onClick={()=>setPassing(true)}>
+          <button className="btn btn-pass" disabled={busy} onClick={()=>setPassing(true)}>
             <span className="lbl2">Pass to...</span>
           </button>
           <button className="btn btn-gold" disabled={busy} onClick={closeCoop}>
@@ -1837,10 +2348,10 @@ function CoopDetail({me, people, coop, members, onClose, reload}){
         <Sheet onClose={()=>setPassing(false)}>
           <h3>Pass to</h3>
           <div className="sub">Your part is done. Hand the ball to whoever is next.</div>
-          <PersonGrid people={people} value={passTo} onChange={setPassTo} exclude={me.id}/>
+          <PersonGrid people={people.filter(p=>roster.includes(p.id))} value={passTo} onChange={setPassTo} exclude={me.id}/>
           <textarea rows="2" placeholder="What should they do next?" value={passMsg}
             onChange={e=>setPassMsg(e.target.value)}/>
-          <div className="lbl">Remind them if no response</div>
+          <div className="lbl">Remind you if no response</div>
           <div className="pgrid">
             {[['No reminder',0],['In 3 hours',3],['Tomorrow',24],['In 2 days',48]].map(([l,h])=>(
               <button key={l} className={'pbtn'+(passRemind===h?' on':'')} onClick={()=>setPassRemind(h)}>{l}</button>
@@ -1850,6 +2361,25 @@ function CoopDetail({me, people, coop, members, onClose, reload}){
           <button className="btn btn-gold" style={{width:'100%'}} disabled={!passTo||busy} onClick={doPass}>
             {busy?'Passing...':'Pass'}
           </button>
+        </Sheet>
+      )}
+
+      {adding&&(
+        <Sheet onClose={()=>{setAdding(false);setAddPick([]);setAddMsg('');}}>
+          <h3>Add to this coop</h3>
+          <div className="sub">Bring more people in. They get an invite and join once they accept.</div>
+          <PersonGrid people={people.filter(p=>!roster.includes(p.id))} value={addPick}
+            onChange={id=>setAddPick(a=>a.includes(id)?a.filter(x=>x!==id):[...a,id])}
+            exclude={me.id} multi/>
+          <textarea rows="2" placeholder="A note for them (optional)" value={addMsg}
+            onChange={e=>setAddMsg(e.target.value)}/>
+          <div style={{height:8}}/>
+          <button className="btn btn-gold" style={{width:'100%'}} disabled={!addPick.length||busy} onClick={addMembers}>
+            {busy?'Adding...':`Add ${addPick.length||''}`.trim()}
+          </button>
+          {people.filter(p=>!roster.includes(p.id)&&p.id!==me.id).length===0&&(
+            <div className="note" style={{textAlign:'center',marginTop:10}}>Everyone is already on this coop.</div>
+          )}
         </Sheet>
       )}
     </div>
@@ -2146,10 +2676,25 @@ function GoalsTab({me, goals, gps, reload, goalType, setGoalType, tasks}){
   const icon=s=>s==='completed'?'✓':s==='kept'?'→':'○';
   const iconColor=s=>s==='completed'?'var(--green)':s==='kept'?'var(--gold)':'var(--muted2)';
 
+  // swipe left/right to move between goal periods (same as the tasks tab)
+  const gSegs=['overview',...PERIOD_TYPES];
+  const gSwipe=useRef({x:0,y:0,on:false});
+  function gTouchStart(e){ const t=e.touches[0]; gSwipe.current={x:t.clientX,y:t.clientY,on:true}; }
+  function gTouchEnd(e){
+    if(!gSwipe.current.on) return; gSwipe.current.on=false;
+    const t=e.changedTouches[0];
+    const dx=t.clientX-gSwipe.current.x, dy=t.clientY-gSwipe.current.y;
+    if(Math.abs(dx)<55 || Math.abs(dx)<Math.abs(dy)*1.5) return;
+    const idx=gSegs.indexOf(goalType);
+    const ni = dx<0 ? Math.min(gSegs.length-1, idx+1) : Math.max(0, idx-1);
+    if(ni!==idx) setGoalType(gSegs[ni]);
+  }
+
   return (
     <div>
       <Seg items={[{k:'overview',l:'Overview'},...PERIOD_TYPES.map(t=>({k:t,l:PLABEL[t]}))]} value={goalType} onChange={setGoalType}/>
 
+      <div className="swipearea" onTouchStart={gTouchStart} onTouchEnd={gTouchEnd}>
       {goalType==='overview'&&(
         <GoalOverview me={me} goals={goals} reload={reload} setGoalType={setGoalType}/>
       )}
@@ -2264,6 +2809,7 @@ function GoalsTab({me, goals, gps, reload, goalType, setGoalType, tasks}){
         );
       })}
       </>}
+      </div>
     </div>
   );
 }
@@ -2431,13 +2977,18 @@ function TeamTab({me, people, coops, members}){
   const [data,setData]=useState(null);
   const [open,setOpen]=useState(null);
   const [view,setView]=useState('compare');
+  const [gMetric,setGMetric]=useState('doneWeek');
   useEffect(()=>{ (async()=>{
-    const [t,g,r]=await Promise.all([
+    const [t,g,r,rp,rm,ri]=await Promise.all([
       sb.from('wios_tasks').select('*'),
       sb.from('wios_goals').select('*'),
       sb.from('wios_recurrings').select('*'),
+      sb.from('wios_role_projects').select('*'),
+      sb.from('wios_role_members').select('*'),
+      sb.from('wios_role_items').select('*'),
     ]);
-    setData({tasks:t.data||[], goals:g.data||[], recs:r.data||[]});
+    setData({tasks:t.data||[], goals:g.data||[], recs:r.data||[],
+      roleProjects:rp.data||[], roleMembers:rm.data||[], roleItems:ri.data||[]});
   })(); },[]);
   if(!data) return <div className="empty">Loading the team...</div>;
 
@@ -2453,17 +3004,32 @@ function TeamTab({me, people, coops, members}){
     const doneWeek=done.filter(x=>new Date(x.completed_at).getTime()>=weekAgo).length;
     const doneMonth=done.filter(x=>new Date(x.completed_at).getTime()>=monthAgo).length;
 
-    // average time from created to completed (in days), last 30 days of completions
+    // 4-week completion trend (oldest -> newest), for a sparkline
+    const trend=[3,2,1,0].map(w=>{
+      const lo=now-(w+1)*7*86400000, hi=now-w*7*86400000;
+      return done.filter(x=>{const ts=new Date(x.completed_at).getTime();return ts>=lo&&ts<hi;}).length;
+    });
+
     const spans=done
       .filter(x=>new Date(x.completed_at).getTime()>=monthAgo)
       .map(x=>(new Date(x.completed_at)-new Date(x.created_at))/86400000)
       .filter(d=>d>=0);
     const avgDays=spans.length?(spans.reduce((a,b)=>a+b,0)/spans.length):null;
 
-    // coop involvement this month (accepted or held)
+    // on-time rate: of tasks that had a due date and are done, how many finished before due
+    const withDue=done.filter(x=>x.due_at);
+    const onTime=withDue.filter(x=>new Date(x.completed_at)<=new Date(x.due_at)).length;
+    const onTimePct=withDue.length?Math.round(onTime/withDue.length*100):null;
+
     const coopDoneMonth=coops.filter(c=>c.status==='closed'&&c.closed_at&&
       new Date(c.closed_at).getTime()>=monthAgo&&
       (c.holder_id===p.id||c.creator_id===p.id||members.some(m=>m.coop_id===c.id&&m.user_id===p.id&&m.status==='accepted'))).length;
+
+    // role projects the person is on, and how much of their part is done
+    const myMems=data.roleMembers.filter(m=>m.user_id===p.id);
+    const roleActive=myMems.filter(m=>{const pr=data.roleProjects.find(x=>x.id===m.project_id);return pr&&pr.status!=='done';}).length;
+    const roleItemsMine=data.roleItems.filter(it=>it.assignee_id===p.id&&it.approved);
+    const roleItemsDone=roleItemsMine.filter(it=>it.done).length;
 
     const gW=data.goals.filter(x=>x.owner_id===p.id&&x.period_type==='week'&&x.period_key===wk&&x.status!=='deleted'&&x.status!=='kept');
     const gM=data.goals.filter(x=>x.owner_id===p.id&&x.period_type==='month'&&x.period_key===mo&&x.status!=='deleted'&&x.status!=='kept');
@@ -2471,15 +3037,11 @@ function TeamTab({me, people, coops, members}){
 
     const active=t.filter(x=>x.status==='active').length;
     const waiting=t.filter(x=>x.status==='waiting').length;
-
-    // stale = active tasks older than 7 days (being sat on)
     const stale=t.filter(x=>x.status==='active'&&daysAgo(x.created_at)>=7).length;
 
-    // Activity level: recent throughput vs how much is being carried and how stale.
-    // Simple, transparent score out of 100. Not a verdict, a signal.
-    const throughput=Math.min(doneWeek*12, 60);           // up to 60 for finishing things
-    const goalPart=gW.length?Math.round(gW.filter(x=>x.status==='completed').length/gW.length*20):0; // up to 20
-    const recPart=Math.min(rec.reduce((a,x)=>Math.max(a,x.streak||0),0),20);  // up to 20 for keeping habits
+    const throughput=Math.min(doneWeek*12, 60);
+    const goalPart=gW.length?Math.round(gW.filter(x=>x.status==='completed').length/gW.length*20):0;
+    const recPart=Math.min(rec.reduce((a,x)=>Math.max(a,x.streak||0),0),20);
     const stalePenalty=Math.min(stale*8,30);
     const score=Math.max(0,Math.min(100, throughput+goalPart+recPart-stalePenalty));
     const level=score>=66?'Active':score>=33?'Steady':'Quiet';
@@ -2487,8 +3049,8 @@ function TeamTab({me, people, coops, members}){
     return {
       active, waiting, stale,
       turn:coops.filter(c=>c.status==='active'&&c.holder_id===p.id).length,
-      doneWeek, doneMonth, coopDoneMonth,
-      avgDays,
+      doneWeek, doneMonth, coopDoneMonth, avgDays, onTimePct, trend,
+      roleActive, roleItemsMine:roleItemsMine.length, roleItemsDone,
       wPct:gW.length?Math.round(gW.filter(x=>x.status==='completed').length/gW.length*100):null,
       mPct:gM.length?Math.round(gM.filter(x=>x.status==='completed').length/gM.length*100):null,
       topStreak:rec.reduce((a,x)=>Math.max(a,x.streak||0),0),
@@ -2499,15 +3061,23 @@ function TeamTab({me, people, coops, members}){
 
   const rows=people.map(p=>({p, s:stats(p)}));
 
-  // rankings for the compare view: highlight the leader on each metric
   const maxOf=(sel)=>Math.max(1,...rows.map(r=>sel(r.s)||0));
   const compareMetrics=[
     {k:'doneWeek', label:'Done this week', sel:s=>s.doneWeek},
     {k:'doneMonth', label:'Done this month', sel:s=>s.doneMonth},
     {k:'active', label:'Active now', sel:s=>s.active},
+    {k:'waiting', label:'Waiting', sel:s=>s.waiting},
     {k:'stale', label:'Sitting 7d+', sel:s=>s.stale, bad:true},
     {k:'coopDoneMonth', label:'Coops closed', sel:s=>s.coopDoneMonth},
+    {k:'roleActive', label:'Role projects', sel:s=>s.roleActive},
     {k:'topStreak', label:'Best streak', sel:s=>s.topStreak},
+  ];
+  // metric the graph is showing
+  const graphMetrics=[
+    {k:'doneWeek', label:'Done this week', sel:s=>s.doneWeek},
+    {k:'doneMonth', label:'Done this month', sel:s=>s.doneMonth},
+    {k:'score', label:'Activity score', sel:s=>s.score},
+    {k:'stale', label:'Sitting 7d+', sel:s=>s.stale},
   ];
 
   return (
@@ -2535,6 +3105,50 @@ function TeamTab({me, people, coops, members}){
               </div>
             );
           })}
+
+          {/* Graph: compare people on a chosen metric, plus a 4-week trend each */}
+          <div className="sect" style={{marginTop:18}}>Graph</div>
+          <div className="gmetricrow">
+            {graphMetrics.map(m=>(
+              <button key={m.k} className={'gmetric'+(gMetric===m.k?' on':'')} onClick={()=>setGMetric(m.k)}>{m.label}</button>
+            ))}
+          </div>
+          {(()=>{
+            const sel=(graphMetrics.find(m=>m.k===gMetric)||graphMetrics[0]).sel;
+            const mx=Math.max(1,...rows.map(r=>sel(r.s)||0));
+            return (
+              <div className="gbars">
+                {rows.slice().sort((a,b)=>(sel(b.s)||0)-(sel(a.s)||0)).map(({p,s})=>{
+                  const v=sel(s)||0; const pct=Math.round(v/mx*100);
+                  return (
+                    <div key={p.id} className="gbarrow">
+                      <span className="gbarname">{first(p.name)}</span>
+                      <div className="gbartrack"><i style={{width:pct+'%'}}/></div>
+                      <span className="gbarval">{v}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
+          <div className="sect" style={{marginTop:18}}>4-week trend (tasks done)</div>
+          <div className="trendgrid">
+            {rows.map(({p,s})=>{
+              const mx=Math.max(1,...s.trend);
+              return (
+                <div key={p.id} className="trendcard">
+                  <div className="trendname"><span className="chip role">{p.role}</span> {first(p.name)}</div>
+                  <div className="spark">
+                    {s.trend.map((v,i)=>(
+                      <div key={i} className="sparkbar" style={{height:Math.max(6,Math.round(v/mx*100))+'%'}} title={v}/>
+                    ))}
+                  </div>
+                  <div className="trendfoot">{s.trend.reduce((a,b)=>a+b,0)} in 4 wks</div>
+                </div>
+              );
+            })}
+          </div>
 
           {/* Side-by-side metric grid */}
           <div className="sect" style={{marginTop:18}}>Side by side</div>
@@ -2568,6 +3182,14 @@ function TeamTab({me, people, coops, members}){
                 <tr>
                   <td className="cmpmetric">Month goals</td>
                   {rows.map(({p,s})=><td key={p.id} className="cmpval">{s.mPct===null?'--':s.mPct+'%'}</td>)}
+                </tr>
+                <tr>
+                  <td className="cmpmetric">On time</td>
+                  {rows.map(({p,s})=><td key={p.id} className="cmpval">{s.onTimePct===null?'--':s.onTimePct+'%'}</td>)}
+                </tr>
+                <tr>
+                  <td className="cmpmetric">Role tasks</td>
+                  {rows.map(({p,s})=><td key={p.id} className="cmpval">{s.roleItemsMine?`${s.roleItemsDone}/${s.roleItemsMine}`:'--'}</td>)}
                 </tr>
                 <tr>
                   <td className="cmpmetric">Avg to finish</td>
@@ -3082,6 +3704,7 @@ function App(){
   const [allPeople,setAllPeople]=useState([]); // incl. deactivated, for the Members sheet
   const [tasks,setTasks]=useState([]); const [coops,setCoops]=useState([]); const [members,setMembers]=useState([]);
   const [requests,setRequests]=useState([]); const [reqTargets,setReqTargets]=useState([]);
+  const [roleProjects,setRoleProjects]=useState([]); const [roleMembers,setRoleMembers]=useState([]); const [roleItems,setRoleItems]=useState([]);
   const [goals,setGoals]=useState([]); const [gps,setGps]=useState([]); const [recs,setRecs]=useState([]);
   const [tab,setTab]=useState('tasks');
   const [goalType,setGoalType]=useState('overview');
@@ -3174,7 +3797,7 @@ function App(){
     const {data:{user}}=await sb.auth.getUser();
     if(!user) return;
     setBusy(true);
-    const [pRes,tRes,cRes,mRes,gRes,gpRes,rRes,nRes,reqRes,rtRes]=await Promise.all([
+    const [pRes,tRes,cRes,mRes,gRes,gpRes,rRes,nRes,reqRes,rtRes,rpRes,rmRes,riRes]=await Promise.all([
       sb.from('wios_profiles').select('*').order('created_at'),
       sb.from('wios_tasks').select('*').eq('owner_id',user.id),
       sb.from('wios_coops').select('*').order('created_at',{ascending:false}),
@@ -3185,6 +3808,9 @@ function App(){
       sb.from('wios_notifications').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(50),
       sb.from('wios_requests').select('*').order('created_at',{ascending:false}),
       sb.from('wios_request_targets').select('*'),
+      sb.from('wios_role_projects').select('*').order('created_at',{ascending:false}),
+      sb.from('wios_role_members').select('*'),
+      sb.from('wios_role_items').select('*'),
     ]);
     const all=pRes.data||[];
     const mine=all.find(p=>p.id===user.id);
@@ -3197,6 +3823,7 @@ function App(){
     setGoals(gRes.data||[]); setGps(gpRes.data||[]); setRecs(rRes.data||[]);
     setNotifs(nRes.data||[]);
     setRequests(reqRes.data||[]); setReqTargets(rtRes.data||[]);
+    setRoleProjects(rpRes.data||[]); setRoleMembers(rmRes.data||[]); setRoleItems(riRes.data||[]);
     setBusy(false);
 
     // safety net so goal prompts exist even before the first cron run
@@ -3238,8 +3865,9 @@ function App(){
     members.some(m=>m.coop_id===c.id&&m.user_id===me.id&&m.status==='pending')).length:0,[coops,members,me]);
   const reqIncomingN=useMemo(()=>me?reqTargets.filter(t=>t.user_id===me.id&&t.status==='pending').length
     +reqTargets.filter(t=>t.user_id===me.id&&t.status==='accepted').length:0,[reqTargets,me]);
+  const roleIncomingN=useMemo(()=>me?roleItems.filter(it=>it.assignee_id===me.id&&!it.approved).length:0,[roleItems,me]);
   const remindedN=useMemo(()=>tasks.filter(t=>t.status==='active'&&t.reminded).length,[tasks]);
-  const coopBadge=myTurn+coopReqN+reqIncomingN;
+  const coopBadge=myTurn+coopReqN+reqIncomingN+roleIncomingN;
 
   useEffect(()=>{
     const n=coopBadge+remindedN;
@@ -3291,6 +3919,7 @@ function App(){
         {tab==='tasks'&&<TasksTab me={me} people={people} tasks={tasks}
           coops={coops} members={members} goals={goals}
           requests={requests} reqTargets={reqTargets}
+          roleProjects={roleProjects} roleMembers={roleMembers} roleItems={roleItems}
           reload={load} openCoopId={openCoopId} setOpenCoopId={setOpenCoopId}
           gotoGoals={tp=>{ setGoalType(tp); setTab('goals'); }}/>}
         {tab==='goals'&&<GoalsTab me={me} goals={goals} gps={gps} reload={load}
