@@ -14,7 +14,8 @@ const { ROLES_DOC } = require('./roles-doc.js');
 
 const SUPA_URL = 'https://xttqxjuunuchlxjrknyt.supabase.co';
 const ANON_KEY = 'sb_publishable_qL2xlkjIkIWGOkzaDitIJw_3iRNx9dA';
-const MODEL = 'claude-opus-4-8';
+const MODEL = 'claude-opus-4-8';        // deep weekly brief generation (runs in the background)
+const CHAT_MODEL = 'claude-sonnet-5';   // fast, for interactive chat replies while the CEO waits
 
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -220,7 +221,7 @@ ROSTER: ${roster}`;
       const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-        body: JSON.stringify({ model: MODEL, max_tokens: 1800, system: sys + memoryNote + directiveProtocol + `\n\nCURRENT TEAM DATA:\n${block}`, messages }),
+        body: JSON.stringify({ model: CHAT_MODEL, max_tokens: 1200, system: sys + memoryNote + directiveProtocol + `\n\nCURRENT TEAM DATA:\n${block}`, messages }),
       });
       if (!aiRes.ok) {
         console.error('ceo brief chat failed', aiRes.status, await aiRes.text());

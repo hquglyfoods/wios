@@ -19,7 +19,8 @@ const { ROLES_DOC } = require('./roles-doc.js');
 
 const SUPA_URL = 'https://xttqxjuunuchlxjrknyt.supabase.co';
 const ANON_KEY = 'sb_publishable_qL2xlkjIkIWGOkzaDitIJw_3iRNx9dA';
-const MODEL = 'claude-opus-4-8';
+const MODEL = 'claude-opus-4-8';        // deep weekly note generation (runs in the background)
+const CHAT_MODEL = 'claude-sonnet-5';   // fast, for interactive chat replies while the user waits
 
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -306,7 +307,7 @@ ${dataBlock}`;
           'anthropic-version': '2023-06-01',
           'content-type': 'application/json',
         },
-        body: JSON.stringify({ model: MODEL, max_tokens: 1400, system: coachSystemBase + (await memoryDigest()) + (await directiveNote()), messages }),
+        body: JSON.stringify({ model: CHAT_MODEL, max_tokens: 1100, system: coachSystemBase + (await memoryDigest()) + (await directiveNote()), messages }),
       });
       if (!aiRes.ok) {
         console.error('coach chat failed', aiRes.status, await aiRes.text());

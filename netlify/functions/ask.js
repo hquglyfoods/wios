@@ -206,7 +206,7 @@ ${dataBlock}`;
         'anthropic-version': '2023-06-01',
         'content-type': 'application/json',
       },
-      body: JSON.stringify({ model: MODEL, max_tokens: 2000, system: system + memoryNote, messages }),
+      body: JSON.stringify({ model: MODEL, max_tokens: 1200, system: system + memoryNote, messages }),
     });
 
     if (!aiRes.ok) {
