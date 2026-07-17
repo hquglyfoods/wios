@@ -373,6 +373,36 @@ body.kb-open .askwrap{bottom:calc(var(--kb, 0px) + 6px);}   /* input rides on to
 .pcheck{width:15px;height:15px;display:inline-flex;margin-right:2px;color:var(--gold);}
 .pcheck svg{width:14px;height:14px;stroke:currentColor;stroke-width:2.6;fill:none;stroke-linecap:round;stroke-linejoin:round;}
 
+.addrow3 .addbtn{font-size:13.5px;gap:6px;}
+.addrow3 .addbtn svg{width:17px;height:17px;}
+.reqcard .coopmark{color:var(--gold);}
+.reqmsg{background:var(--panel2);border-radius:12px;padding:12px 14px;font-style:italic;color:var(--text);margin-bottom:14px;font-size:14px;}
+.reqrow{display:flex;align-items:center;gap:8px;padding:10px 2px;border-bottom:1px solid var(--border);}
+.reqrow:last-child{border-bottom:none;}
+.dbody{padding:16px 14px 40px;overflow-y:auto;}
+.chip.off{background:var(--panel2);color:var(--muted2);}
+
+.ovsect{margin-bottom:18px;}
+.ovhead{display:flex;align-items:baseline;gap:8px;width:100%;padding:8px 2px;border-bottom:1.5px solid var(--gold-line);margin-bottom:8px;}
+.ovheadname{font-size:15px;font-weight:700;color:var(--gold);flex:none;}
+.ovheadkey{font-size:12px;color:var(--muted);flex:1;text-align:left;}
+.ovheadcta{font-size:12px;color:var(--muted2);flex:none;}
+.ovrow{display:flex;align-items:center;gap:9px;padding:8px 2px;}
+.ovdot{width:20px;height:20px;flex:none;border-radius:50%;box-shadow:inset 0 0 0 2px var(--border2);
+  display:flex;align-items:center;justify-content:center;color:transparent;}
+.ovdot.done{background:var(--green);box-shadow:none;color:#fff;}
+.ovdot svg{width:13px;height:13px;stroke:currentColor;stroke-width:2.8;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+.ovdone{color:var(--muted);text-decoration:line-through;}
+.ovrow .grow{font-size:14px;}
+.ovlink{width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;
+  color:var(--muted2);border-radius:8px;}
+.ovlink svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.9;fill:none;}
+.ovlink:active{background:var(--panel2);color:var(--gold);}
+.ovpick{background:var(--panel2);border-radius:10px;padding:10px;margin:2px 0 6px 29px;}
+.ovopt{display:block;width:100%;text-align:left;padding:9px 10px;border-radius:8px;font-size:13px;
+  background:var(--panel);box-shadow:inset 0 0 0 1px var(--border);margin-bottom:6px;color:var(--text);}
+.ovopt.on{box-shadow:inset 0 0 0 1.5px var(--gold);color:var(--gold);}
+
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important;}}
 </style>
 </head>
@@ -420,6 +450,7 @@ const ICON = {
   back:  <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>,
   undo:  <svg viewBox="0 0 24 24"><path d="M9 7L4 12l5 5"/><path d="M4 12h11a5 5 0 0 1 0 10h-1"/></svg>,
   note:  <svg viewBox="0 0 24 24"><path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="M14 7l3 3"/></svg>,
+  request: <svg viewBox="0 0 24 24"><path d="M4 9v6h3l6 4V5L7 9H4z"/><path d="M17 8.5a4 4 0 0 1 0 7"/></svg>,
 };
 const Ic = ({name,className,style}) => <span className={'ic '+(className||'')} style={style}>{ICON[name]}</span>;
 
@@ -640,7 +671,7 @@ function Login(){
 }
 
 /* ── tasks ───────────────────────────────────────────────── */
-function TasksTab({me, people, tasks, coops, members, goals, reload, openCoopId, setOpenCoopId, gotoGoals}){
+function TasksTab({me, people, tasks, coops, members, goals, requests, reqTargets, reload, openCoopId, setOpenCoopId, gotoGoals}){
   const [seg,setSeg]=useState('active');
   const [quick,setQuick]=useState('');
   const [sel,setSel]=useState(null);
@@ -686,6 +717,29 @@ function TasksTab({me, people, tasks, coops, members, goals, reload, openCoopId,
     });
     return {req,mine,theirs,closed};
   },[coops,members,me.id]);
+
+  const [showNewRequest,setShowNewRequest]=useState(false);
+  const [openReqId,setOpenReqId]=useState(null);
+  // Requests split into: incoming (someone asked me, I have not accepted),
+  // mine-to-do (I accepted, not yet completed) -> Active,
+  // sent-by-me (I am the asker) -> tracked as a card, and done.
+  const reqGroups=useMemo(()=>{
+    const incoming=[], todo=[], sent=[], done=[];
+    (requests||[]).forEach(r=>{
+      const myT=reqTargets.find(t=>t.request_id===r.id&&t.user_id===me.id);
+      const iSent=r.creator_id===me.id;
+      if(iSent){
+        (r.status==='done'?done:sent).push(r);
+      }
+      if(myT){
+        if(myT.status==='pending') incoming.push(r);
+        else if(myT.status==='accepted') todo.push(r);
+        else if(myT.status==='completed' && r.status!=='done') { /* waiting on others, hide from my active */ }
+      }
+    });
+    return {incoming,todo,sent,done};
+  },[requests,reqTargets,me.id]);
+  const reqTargetsOf=id=>reqTargets.filter(t=>t.request_id===id);
 
   // this-week goals for the strip
   const weekGoals=useMemo(()=>{
@@ -926,8 +980,105 @@ function TasksTab({me, people, tasks, coops, members, goals, reload, openCoopId,
     );
   }
 
+  // ── request actions ──
+  async function acceptRequest(r){
+    if(busy) return; setBusy(true);
+    try{
+      await sb.from('wios_request_targets').update({status:'accepted',accepted_at:nowIso()})
+        .eq('request_id',r.id).eq('user_id',me.id);
+      reload();
+    }catch(e){ alert(e.message||'Could not accept.'); }
+    setBusy(false);
+  }
+  async function declineRequest(r){
+    if(busy) return; setBusy(true);
+    try{
+      await sb.from('wios_request_targets').update({status:'declined'})
+        .eq('request_id',r.id).eq('user_id',me.id);
+      notifyUsers([r.creator_id], `${cLabel(me.id)} declined`, r.title, null);
+      reload();
+    }catch(e){ alert(e.message||'Could not decline.'); }
+    setBusy(false);
+  }
+  async function completeRequest(r){
+    if(busy) return; setBusy(true);
+    try{
+      await sb.from('wios_request_targets').update({status:'completed',completed_at:nowIso()})
+        .eq('request_id',r.id).eq('user_id',me.id);
+      // tell the asker someone finished
+      notifyUsers([r.creator_id], `${cLabel(me.id)} finished your request`, r.title, null);
+      // if everyone who accepted has now completed, nudge the asker to close it
+      const targets=reqTargets.filter(t=>t.request_id===r.id);
+      const active=targets.filter(t=>t.status!=='declined'&&t.user_id!==me.id);
+      const allDone=active.every(t=>t.status==='completed');
+      if(allDone) notifyUsers([r.creator_id], `Everyone finished: ${r.title}`, 'Ready for you to close', null);
+      reload();
+    }catch(e){ alert(e.message||'Could not update.'); }
+    setBusy(false);
+  }
+  async function closeRequest(r){
+    if(busy) return;
+    if(!confirm('Close this request? It moves to Done for everyone.')) return;
+    setBusy(true);
+    try{
+      await sb.from('wios_requests').update({status:'done',closed_at:nowIso()}).eq('id',r.id);
+      reload();
+    }catch(e){ alert(e.message||'Could not close.'); }
+    setBusy(false);
+  }
+  async function deleteRequest(r){
+    if(busy) return;
+    if(!confirm('Delete this request for everyone?')) return;
+    setBusy(true);
+    try{
+      await sb.from('wios_request_targets').delete().eq('request_id',r.id);
+      await sb.from('wios_requests').delete().eq('id',r.id);
+      reload();
+    }catch(e){ alert(e.message||'Could not delete.'); }
+    setBusy(false);
+  }
+
+  function RequestCard({r, incoming, sent}){
+    const targets=reqTargetsOf(r.id);
+    const active=targets.filter(t=>t.status!=='declined');
+    const doneN=targets.filter(t=>t.status==='completed').length;
+    const myT=targets.find(t=>t.user_id===me.id);
+    return (
+      <div className="card reqcard" onClick={()=>setOpenReqId(r.id)}>
+        <div className="row">
+          <span className="coopmark" aria-label="Request">{ICON.request}</span>
+          <div className="grow">
+            <div className="tt">{r.title}</div>
+            <div className="meta">
+              {r.urgent&&r.status!=='done'&&<span className="chip urgent">Urgent</span>}
+              {sent?<span className="chip sub">{doneN}/{active.length} done</span>
+                : <span>from {cLabel(r.creator_id)}</span>}
+              {r.status==='done'&&<span className="chip ok">Closed</span>}
+              {!sent&&myT&&myT.status==='accepted'&&<span className="chip back">Accepted</span>}
+            </div>
+          </div>
+          {sent&&r.creator_id===me.id&&(
+            <button className="trash" onClick={e=>{e.stopPropagation();deleteRequest(r);}} aria-label="Delete request">{ICON.trash}</button>
+          )}
+        </div>
+        {incoming&&(
+          <div className="row" style={{marginTop:12,gap:8}}>
+            <button className="btn btn-gold btn-sm" style={{flex:1}} disabled={busy}
+              onClick={e=>{e.stopPropagation();acceptRequest(r);}}>Accept</button>
+            <button className="btn btn-line btn-sm" style={{flex:1}} disabled={busy}
+              onClick={e=>{e.stopPropagation();declineRequest(r);}}>Decline</button>
+          </div>
+        )}
+        {sent&&r.status!=='done'&&active.length>0&&active.every(t=>t.status==='completed')&&(
+          <button className="btn btn-gold btn-sm" style={{width:'100%',marginTop:10}} disabled={busy}
+            onClick={e=>{e.stopPropagation();closeRequest(r);}}>Everyone is done, close it</button>
+        )}
+      </div>
+    );
+  }
+
   const segItems=[
-    {k:'active',l:`Active${(lists.active.length+coopGroups.mine.length)?` ${lists.active.length+coopGroups.mine.length}`:''}`},
+    {k:'active',l:`Active${(lists.active.length+coopGroups.mine.length+reqGroups.todo.length)?` ${lists.active.length+coopGroups.mine.length+reqGroups.todo.length}`:''}`},
     {k:'waiting',l:`Waiting${(lists.waiting.length+coopGroups.theirs.length)?` ${lists.waiting.length+coopGroups.theirs.length}`:''}`},
     {k:'scheduled',l:'Later'},
     {k:'done',l:'Done'},
@@ -946,20 +1097,24 @@ function TasksTab({me, people, tasks, coops, members, goals, reload, openCoopId,
         </button>
       )}
 
-      <div className="addrow">
+      <div className="addrow addrow3">
         <button className="btn addbtn" onClick={()=>{ setNewTaskTitle(''); setShowNewTask(true); }}>
           {ICON.tasks}<span>Task</span>
         </button>
-        <button className="btn addbtn" onClick={()=>{ setSendTo(null); setSendMsg(''); setShowNewCoop(true); }}>
+        <button className="btn addbtn" onClick={()=>{ setSendTo([]); setSendMsg(''); setShowNewCoop(true); }}>
           {ICON.coop}<span>Coop</span>
+        </button>
+        <button className="btn addbtn" onClick={()=>setShowNewRequest(true)}>
+          {ICON.request}<span>Request</span>
         </button>
       </div>
 
       <Seg items={segItems} value={seg} onChange={v=>{setSeg(v); if(v!=='active') setSortMode(false);}}/>
 
-      {seg==='active'&&coopGroups.req.length>0&&(
+      {seg==='active'&&(coopGroups.req.length>0||reqGroups.incoming.length>0)&&(
         <>
-          <div className="sect">Requests <span className="n">{coopGroups.req.length}</span></div>
+          <div className="sect">Requests <span className="n">{coopGroups.req.length+reqGroups.incoming.length}</span></div>
+          {reqGroups.incoming.map(r=><RequestCard key={r.id} r={r} incoming/>)}
           {coopGroups.req.map(c=><CoopCard key={c.id} c={c} request/>)}
         </>
       )}
@@ -984,8 +1139,11 @@ function TasksTab({me, people, tasks, coops, members, goals, reload, openCoopId,
       )}
 
       {seg==='active'&&!sortMode&&coopGroups.mine.map(c=><CoopCard key={c.id} c={c}/>)}
+      {seg==='active'&&!sortMode&&reqGroups.todo.map(r=><RequestCard key={r.id} r={r}/>)}
+      {seg==='active'&&!sortMode&&reqGroups.sent.map(r=><RequestCard key={r.id} r={r} sent/>)}
       {seg==='waiting'&&coopGroups.theirs.map(c=><CoopCard key={c.id} c={c}/>)}
       {seg==='done'&&coopGroups.closed.map(c=><CoopCard key={c.id} c={c}/>)}
+      {seg==='done'&&reqGroups.done.map(r=><RequestCard key={r.id} r={r} sent/>)}
 
       {lists[seg].length===0&&coopGroups.mine.length===0&&coopGroups.theirs.length===0&&
        coopGroups.closed.length===0&&coopGroups.req.length===0&&(
@@ -1213,6 +1371,20 @@ function TasksTab({me, people, tasks, coops, members, goals, reload, openCoopId,
         <NewCoopSheet me={me} people={people} onClose={()=>setShowNewCoop(false)} reload={reload}/>
       )}
 
+      {showNewRequest&&(
+        <NewRequestSheet me={me} people={people} onClose={()=>setShowNewRequest(false)} reload={reload}/>
+      )}
+
+      {openReqId&&(()=>{
+        const r=(requests||[]).find(x=>x.id===openReqId);
+        if(!r){ return null; }
+        return <RequestDetail me={me} people={people} r={r} targets={reqTargetsOf(r.id)}
+          onClose={()=>setOpenReqId(null)}
+          onAccept={()=>acceptRequest(r)} onDecline={()=>declineRequest(r)}
+          onComplete={()=>completeRequest(r)} onClose2={()=>{closeRequest(r);setOpenReqId(null);}}
+          onDelete={()=>{deleteRequest(r);setOpenReqId(null);}} busy={busy}/>;
+      })()}
+
       {declining&&(
         <Sheet onClose={()=>setDeclining(null)}>
           <h3>Respond</h3>
@@ -1276,6 +1448,111 @@ function NewCoopSheet({me, people, onClose, reload}){
         {busy?'Creating...':'Create coop'}
       </button>
     </Sheet>
+  );
+}
+
+function NewRequestSheet({me, people, onClose, reload}){
+  const [title,setTitle]=useState(''); const [msg,setMsg]=useState('');
+  const [to,setTo]=useState([]); const [urgent,setUrgent]=useState(false);
+  const [busy,setBusy]=useState(false);
+  const label=id=>{ const p=people.find(x=>x.id===id); return p?`${p.role} ${first(p.name)}`:'someone'; };
+  const toggle=id=>setTo(a=>a.includes(id)?a.filter(x=>x!==id):[...a,id]);
+  async function create(){
+    const t=title.trim(); if(!t||!to.length||busy) return;
+    setBusy(true);
+    try{
+      const {data:req,error}=await sb.from('wios_requests').insert({
+        creator_id:me.id, title:t, message:msg||null, urgent, status:'open'
+      }).select().single();
+      if(error) throw error;
+      const rows=to.map(uid=>({request_id:req.id, user_id:uid, status:'pending'}));
+      await sb.from('wios_request_targets').insert(rows);
+      notifyUsers(to, `${label(me.id)} asked you`, t, null);
+      onClose(); reload();
+    }catch(e){ alert(e.message||'Could not send.'); }
+    setBusy(false);
+  }
+  return (
+    <Sheet onClose={onClose}>
+      <h3>New request</h3>
+      <div className="sub">Ask one or more people to do something. Each person accepts, does it, then marks it done. You get a push as each one finishes.</div>
+      <input autoFocus placeholder="What are you asking for?" value={title} onChange={e=>setTitle(e.target.value)}/>
+      <textarea rows="2" placeholder="Details (optional)" value={msg} onChange={e=>setMsg(e.target.value)}/>
+      <div className="lbl">Ask who {to.length>0&&<span style={{color:'var(--gold)'}}>{to.length} selected</span>}</div>
+      <PersonGrid people={people} value={to} onChange={toggle} exclude={me.id} multi/>
+      <button className={'opt'+(urgent?' on':'')} style={{marginTop:10}} onClick={()=>setUrgent(!urgent)}>
+        <Ic name={urgent?'starFill':'star'} className="gold"/>
+        <span className="grow">{urgent?'Urgent':'Mark urgent'}</span>
+      </button>
+      <div style={{height:6}}/>
+      <button className="btn btn-gold" style={{width:'100%'}} disabled={!title.trim()||!to.length||busy} onClick={create}>
+        {busy?'Sending...':`Send request${to.length>1?` to ${to.length}`:''}`}
+      </button>
+    </Sheet>
+  );
+}
+
+function RequestDetail({me, people, r, targets, onClose, onAccept, onDecline, onComplete, onClose2, onDelete, busy}){
+  const label=id=>{ const p=people.find(x=>x.id===id); return p?`${p.role} ${first(p.name)}`:'someone'; };
+  const iSent=r.creator_id===me.id;
+  const myT=targets.find(t=>t.user_id===me.id);
+  const active=targets.filter(t=>t.status!=='declined');
+  const doneN=targets.filter(t=>t.status==='completed').length;
+  const allDone=active.length>0&&active.every(t=>t.status==='completed');
+  const stTxt=s=>s==='completed'?'Done':s==='accepted'?'Accepted':s==='declined'?'Declined':'Waiting';
+  const stCls=s=>s==='completed'?'ok':s==='accepted'?'back':s==='declined'?'off':'wait';
+  return (
+    <div className="detail">
+      <div className="dhdr">
+        <button className="iconbtn" onClick={onClose} aria-label="Back">{ICON.back}</button>
+        <div className="grow">
+          <div className="tt">{r.title}</div>
+          <div className="meta">
+            <span className="coopmark" aria-label="Request" style={{width:16,height:16}}>{ICON.request}</span>
+            <span>Request from {label(r.creator_id)}</span>
+            {r.status==='done'&&<span className="chip ok">Closed</span>}
+          </div>
+        </div>
+        {iSent&&(
+          <button className="iconbtn" onClick={onDelete} disabled={busy} aria-label="Delete request" style={{color:'var(--red)'}}>{ICON.trash}</button>
+        )}
+      </div>
+
+      <div className="dbody">
+        {r.message&&<div className="reqmsg">"{r.message}"</div>}
+
+        <div className="lbl">Who was asked <span style={{color:'var(--gold)'}}>{doneN}/{active.length} done</span></div>
+        {targets.map(t=>(
+          <div key={t.user_id} className="reqrow">
+            <span className="grow">{label(t.user_id)}</span>
+            <span className={'chip '+stCls(t.status)}>{stTxt(t.status)}</span>
+          </div>
+        ))}
+
+        {/* recipient actions */}
+        {!iSent&&myT&&myT.status==='pending'&&(
+          <div className="row" style={{gap:8,marginTop:14}}>
+            <button className="btn btn-gold" style={{flex:1}} disabled={busy} onClick={onAccept}>Accept</button>
+            <button className="btn btn-line" style={{flex:1}} disabled={busy} onClick={onDecline}>Decline</button>
+          </div>
+        )}
+        {!iSent&&myT&&myT.status==='accepted'&&(
+          <button className="btn btn-gold" style={{width:'100%',marginTop:14}} disabled={busy} onClick={onComplete}>
+            Mark completed
+          </button>
+        )}
+        {!iSent&&myT&&myT.status==='completed'&&(
+          <div className="note" style={{marginTop:14}}>You finished this. Waiting on the others.</div>
+        )}
+
+        {/* asker actions */}
+        {iSent&&r.status!=='done'&&(
+          <button className="btn btn-gold" style={{width:'100%',marginTop:14}} disabled={busy||!allDone} onClick={onClose2}>
+            {allDone?'Everyone is done, close it':`Waiting on ${active.length-doneN} more`}
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -1481,6 +1758,101 @@ function CoopDetail({me, people, coop, members, onClose, reload}){
 }
 
 /* ── goals ───────────────────────────────────────────────── */
+function GoalOverview({me, goals, reload, setGoalType}){
+  // Show the current goals for every period, top-down (year -> semester -> month -> week),
+  // with child goals nested under the parent they were linked to.
+  const [linking,setLinking]=useState(null);
+  const [busy,setBusy]=useState(false);
+  const order=['year','semester','month','week'];
+  const parentType={week:'month',month:'semester',semester:'year',year:null};
+
+  const cur=useMemo(()=>{
+    const by={};
+    order.forEach(t=>{
+      const key=periodKey(t);
+      by[t]=goals.filter(g=>g.period_type===t&&g.period_key===key&&g.status!=='deleted'&&g.status!=='kept')
+        .sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+    });
+    return by;
+  },[goals]);
+
+  const childrenOf=(pid)=>goals.filter(g=>g.parent_id===pid&&g.status!=='deleted'&&g.status!=='kept');
+  const parentCandidates=(type)=>{ const pt=parentType[type]; return pt?(cur[pt]||[]):[]; };
+  async function setParent(g,pid){
+    if(busy) return; setBusy(true);
+    try{ await sb.from('wios_goals').update({parent_id:pid}).eq('id',g.id); setLinking(null); reload(); }
+    catch(e){ alert(e.message||'Could not link.'); }
+    setBusy(false);
+  }
+  const anyGoals=order.some(t=>(cur[t]||[]).length>0);
+
+  function GoalLine({g, depth}){
+    const kids=childrenOf(g.id);
+    const done=g.status==='completed';
+    return (
+      <div style={{marginLeft:depth*14}}>
+        <div className="ovrow">
+          <span className={'ovdot'+(done?' done':'')}>{done?ICON.check:''}</span>
+          <span className={'grow'+(done?' ovdone':'')}>{g.title}</span>
+          <button className="ovlink" onClick={()=>setLinking(linking===g.id?null:g.id)} aria-label="Link to a bigger goal">
+            {ICON.goals}
+          </button>
+        </div>
+        {linking===g.id&&(
+          <div className="ovpick">
+            <div className="note" style={{marginBottom:6}}>
+              Link this {PWORD[g.period_type]} goal under a bigger goal:
+            </div>
+            {parentCandidates(g.period_type).length===0&&(
+              <div className="note">No {parentType[g.period_type]} goals yet. Add one first.</div>
+            )}
+            {parentCandidates(g.period_type).map(p=>(
+              <button key={p.id} className={'ovopt'+(g.parent_id===p.id?' on':'')} disabled={busy}
+                onClick={()=>setParent(g, g.parent_id===p.id?null:p.id)}>
+                {g.parent_id===p.id?'✓ ':''}{p.title}
+              </button>
+            ))}
+            {g.parent_id&&(
+              <button className="ovopt" disabled={busy} onClick={()=>setParent(g,null)}>Unlink</button>
+            )}
+          </div>
+        )}
+        {kids.map(k=><GoalLine key={k.id} g={k} depth={depth+1}/>)}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="sub" style={{marginBottom:14}}>
+        Your direction, top down. Link each smaller goal to a bigger one so you can see how this week rolls up to the year.
+      </div>
+      {!anyGoals&&(
+        <div className="empty" style={{padding:'20px 14px'}}>
+          No goals yet. Open a period below and add your first one.
+        </div>
+      )}
+      {order.map(t=>{
+        const list=cur[t]||[];
+        const roots = t==='year' ? list : list.filter(g=>!g.parent_id);
+        return (
+          <div key={t} className="ovsect">
+            <button className="ovhead" onClick={()=>setGoalType(t)}>
+              <span className="ovheadname">{PLABEL[t]}</span>
+              <span className="ovheadkey">{periodLabel(t,periodKey(t))}</span>
+              <span className="ovheadcta">Open ›</span>
+            </button>
+            {list.length===0
+              ? <div className="note" style={{padding:'2px 2px 8px'}}>Nothing set for this {PWORD[t]} yet.</div>
+              : roots.map(g=><GoalLine key={g.id} g={g} depth={0}/>)
+            }
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function GoalsTab({me, goals, gps, reload, goalType, setGoalType, tasks}){
   const [text,setText]=useState('');
   const [openHist,setOpenHist]=useState(null);
@@ -1556,8 +1928,13 @@ function GoalsTab({me, goals, gps, reload, goalType, setGoalType, tasks}){
 
   return (
     <div>
-      <Seg items={PERIOD_TYPES.map(t=>({k:t,l:PLABEL[t]}))} value={type} onChange={setGoalType}/>
+      <Seg items={[{k:'overview',l:'Overview'},...PERIOD_TYPES.map(t=>({k:t,l:PLABEL[t]}))]} value={goalType} onChange={setGoalType}/>
 
+      {goalType==='overview'&&(
+        <GoalOverview me={me} goals={goals} reload={reload} setGoalType={setGoalType}/>
+      )}
+
+      {goalType!=='overview'&&<>
       {showReview&&(
         <div className="card" style={{borderColor:'var(--gold-line)'}}>
           <div className="tt" style={{color:'var(--gold)'}}>Close out {periodLabel(type,prevKey)}</div>
@@ -1666,6 +2043,7 @@ function GoalsTab({me, goals, gps, reload, goalType, setGoalType, tasks}){
           </div>
         );
       })}
+      </>}
     </div>
   );
 }
@@ -2403,9 +2781,10 @@ function App(){
   const [people,setPeople]=useState([]);      // active members only
   const [allPeople,setAllPeople]=useState([]); // incl. deactivated, for the Members sheet
   const [tasks,setTasks]=useState([]); const [coops,setCoops]=useState([]); const [members,setMembers]=useState([]);
+  const [requests,setRequests]=useState([]); const [reqTargets,setReqTargets]=useState([]);
   const [goals,setGoals]=useState([]); const [gps,setGps]=useState([]); const [recs,setRecs]=useState([]);
   const [tab,setTab]=useState('tasks');
-  const [goalType,setGoalType]=useState('week');
+  const [goalType,setGoalType]=useState('overview');
   const [openCoopId,setOpenCoopId]=useState(null);
   const [showSettings,setShowSettings]=useState(false);
   const [showMembers,setShowMembers]=useState(false);
@@ -2485,7 +2864,7 @@ function App(){
     const {data:{user}}=await sb.auth.getUser();
     if(!user) return;
     setBusy(true);
-    const [pRes,tRes,cRes,mRes,gRes,gpRes,rRes,nRes]=await Promise.all([
+    const [pRes,tRes,cRes,mRes,gRes,gpRes,rRes,nRes,reqRes,rtRes]=await Promise.all([
       sb.from('wios_profiles').select('*').order('created_at'),
       sb.from('wios_tasks').select('*').eq('owner_id',user.id),
       sb.from('wios_coops').select('*').order('created_at',{ascending:false}),
@@ -2494,6 +2873,8 @@ function App(){
       sb.from('wios_goal_periods').select('*').eq('user_id',user.id),
       sb.from('wios_recurrings').select('*').eq('owner_id',user.id).order('time_hhmm'),
       sb.from('wios_notifications').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(50),
+      sb.from('wios_requests').select('*').order('created_at',{ascending:false}),
+      sb.from('wios_request_targets').select('*'),
     ]);
     const all=pRes.data||[];
     const mine=all.find(p=>p.id===user.id);
@@ -2505,6 +2886,7 @@ function App(){
     setTasks(tRes.data||[]); setCoops(cRes.data||[]); setMembers(mRes.data||[]);
     setGoals(gRes.data||[]); setGps(gpRes.data||[]); setRecs(rRes.data||[]);
     setNotifs(nRes.data||[]);
+    setRequests(reqRes.data||[]); setReqTargets(rtRes.data||[]);
     setBusy(false);
 
     // safety net so goal prompts exist even before the first cron run
@@ -2542,10 +2924,12 @@ function App(){
   const unreadN=useMemo(()=>notifs.filter(n=>!n.read).length,[notifs]);
 
   const myTurn=useMemo(()=>me?coops.filter(c=>c.status==='active'&&c.holder_id===me.id).length:0,[coops,me]);
-  const requests=useMemo(()=>me?coops.filter(c=>c.status==='active'&&
+  const coopReqN=useMemo(()=>me?coops.filter(c=>c.status==='active'&&
     members.some(m=>m.coop_id===c.id&&m.user_id===me.id&&m.status==='pending')).length:0,[coops,members,me]);
+  const reqIncomingN=useMemo(()=>me?reqTargets.filter(t=>t.user_id===me.id&&t.status==='pending').length
+    +reqTargets.filter(t=>t.user_id===me.id&&t.status==='accepted').length:0,[reqTargets,me]);
   const remindedN=useMemo(()=>tasks.filter(t=>t.status==='active'&&t.reminded).length,[tasks]);
-  const coopBadge=myTurn+requests;
+  const coopBadge=myTurn+coopReqN+reqIncomingN;
 
   useEffect(()=>{
     const n=coopBadge+remindedN;
@@ -2596,6 +2980,7 @@ function App(){
       <div className="main">
         {tab==='tasks'&&<TasksTab me={me} people={people} tasks={tasks}
           coops={coops} members={members} goals={goals}
+          requests={requests} reqTargets={reqTargets}
           reload={load} openCoopId={openCoopId} setOpenCoopId={setOpenCoopId}
           gotoGoals={tp=>{ setGoalType(tp); setTab('goals'); }}/>}
         {tab==='goals'&&<GoalsTab me={me} goals={goals} gps={gps} reload={load}

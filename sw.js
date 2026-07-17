@@ -1,6 +1,6 @@
 // WIOS service worker: push + notification click + app badge + fast-open cache.
 // Bump CACHE whenever cache behavior changes so old caches are dropped.
-const CACHE = 'wios-v2';
+const CACHE = 'wios-v3';
 // Only heavy third-party libs are safe to cache-first (they are versioned URLs).
 // The app HTML is NEVER cache-first, so a redeploy always shows immediately.
 const LIBS = [

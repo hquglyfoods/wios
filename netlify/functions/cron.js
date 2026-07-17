@@ -84,7 +84,7 @@ exports.handler = async () => {
         body: JSON.stringify({ status: 'active', reminded: true }),
       });
       await pushToUsers([t.owner_id], {
-        title: 'Scheduled task is up', body: t.title, tag: 'wios-sched', url: '/',
+        title: 'Back on your list', body: t.title, tag: 'wios-sched', url: '/', kind: 'task',
       }, env);
       report.scheduled++;
     }

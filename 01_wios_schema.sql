@@ -104,6 +104,30 @@ create table if not exists public.wios_coop_messages (
 );
 create index if not exists wios_coop_msgs_idx on public.wios_coop_messages(coop_id, created_at);
 
+-- ── 3b. Requests (one asker -> many recipients; each accepts then completes) ──
+create table if not exists public.wios_requests (
+  id uuid primary key default gen_random_uuid(),
+  creator_id uuid not null references public.wios_profiles(id) on delete cascade,
+  title text not null,
+  message text,
+  urgent boolean not null default false,
+  status text not null default 'open' check (status in ('open','done')),  -- done = creator closed it
+  created_at timestamptz not null default now(),
+  closed_at timestamptz
+);
+create index if not exists wios_requests_idx on public.wios_requests(creator_id, status);
+
+create table if not exists public.wios_request_targets (
+  id uuid primary key default gen_random_uuid(),
+  request_id uuid not null references public.wios_requests(id) on delete cascade,
+  user_id uuid not null references public.wios_profiles(id) on delete cascade,
+  status text not null default 'pending' check (status in ('pending','accepted','completed','declined')),
+  accepted_at timestamptz,
+  completed_at timestamptz,
+  unique (request_id, user_id)
+);
+create index if not exists wios_req_targets_idx on public.wios_request_targets(user_id, status);
+
 -- ── 4. Goals ────────────────────────────────────────────────
 create table if not exists public.wios_goals (
   id uuid primary key default gen_random_uuid(),
@@ -113,10 +137,12 @@ create table if not exists public.wios_goals (
   title text not null,
   status text not null default 'open',
   kept_from text,                 -- previous period_key if the goal was kept
+  parent_id uuid references public.wios_goals(id) on delete set null, -- links a goal to a higher-period goal
   created_at timestamptz not null default now(),
   completed_at timestamptz
 );
 create index if not exists wios_goals_idx on public.wios_goals(owner_id, period_type, period_key);
+alter table public.wios_goals add column if not exists parent_id uuid references public.wios_goals(id) on delete set null;
 -- 'kept' status: rebuild the constraint every run so an earlier install picks it up
 alter table public.wios_goals drop constraint if exists wios_goals_status_check;
 alter table public.wios_goals add constraint wios_goals_status_check
@@ -291,6 +317,34 @@ create policy wios_gp_insert on public.wios_goal_periods
 drop policy if exists wios_gp_update on public.wios_goal_periods;
 create policy wios_gp_update on public.wios_goal_periods
   for update using (user_id = auth.uid());
+
+-- requests: creator + targets can read; recipient updates own target row
+alter table public.wios_requests enable row level security;
+alter table public.wios_request_targets enable row level security;
+drop policy if exists wios_requests_select on public.wios_requests;
+create policy wios_requests_select on public.wios_requests for select using (
+  creator_id = auth.uid() or public.wios_is_admin()
+  or exists (select 1 from public.wios_request_targets t where t.request_id = id and t.user_id = auth.uid()));
+drop policy if exists wios_requests_insert on public.wios_requests;
+create policy wios_requests_insert on public.wios_requests for insert with check (creator_id = auth.uid());
+drop policy if exists wios_requests_update on public.wios_requests;
+create policy wios_requests_update on public.wios_requests for update using (creator_id = auth.uid());
+drop policy if exists wios_requests_delete on public.wios_requests;
+create policy wios_requests_delete on public.wios_requests for delete using (creator_id = auth.uid());
+drop policy if exists wios_req_targets_select on public.wios_request_targets;
+create policy wios_req_targets_select on public.wios_request_targets for select using (
+  user_id = auth.uid() or public.wios_is_admin()
+  or exists (select 1 from public.wios_requests r where r.id = request_id and r.creator_id = auth.uid()));
+drop policy if exists wios_req_targets_insert on public.wios_request_targets;
+create policy wios_req_targets_insert on public.wios_request_targets for insert with check (
+  exists (select 1 from public.wios_requests r where r.id = request_id and r.creator_id = auth.uid()));
+drop policy if exists wios_req_targets_update on public.wios_request_targets;
+create policy wios_req_targets_update on public.wios_request_targets for update using (
+  user_id = auth.uid()
+  or exists (select 1 from public.wios_requests r where r.id = request_id and r.creator_id = auth.uid()));
+drop policy if exists wios_req_targets_delete on public.wios_request_targets;
+create policy wios_req_targets_delete on public.wios_request_targets for delete using (
+  exists (select 1 from public.wios_requests r where r.id = request_id and r.creator_id = auth.uid()));
 
 -- recurrings + logs: owner full access, admins read-all
 drop policy if exists wios_rec_select on public.wios_recurrings;
