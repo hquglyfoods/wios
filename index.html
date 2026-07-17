@@ -174,6 +174,10 @@ body.kb-open .tabbar{transform:translateX(-50%) translateY(200%);pointer-events:
 /* coop detail */
 .detail{position:fixed;inset:0;z-index:55;background:var(--bg);max-width:480px;margin:0 auto;
   display:flex;flex-direction:column;}
+/* when a chat field in a full-screen sheet is focused, shrink the sheet so its input bar
+   sits right on top of the keyboard, and the body scrolls above it */
+body.kb-open .detail{bottom:calc(var(--kb, 0px));}
+.detail .askbar{position:sticky;bottom:0;}
 .dhdr{padding:calc(env(safe-area-inset-top) + 10px) 12px 11px;border-bottom:1px solid var(--border);
   display:flex;gap:10px;align-items:flex-start;}
 .thread{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;}
@@ -282,6 +286,26 @@ body.kb-open .askwrap{bottom:calc(var(--kb, 0px) + env(safe-area-inset-bottom) +
 .askmsg.ai{align-self:flex-start;width:100%;max-width:100%;}
 .aitag{font-size:10.5px;font-weight:700;color:var(--gold);letter-spacing:.06em;margin-bottom:5px;
   display:inline-flex;align-items:center;gap:5px;}
+.rich{display:flex;flex-direction:column;gap:12px;}
+.richsect{display:flex;flex-direction:column;gap:6px;}
+.richhd{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:800;letter-spacing:.01em;
+  text-transform:uppercase;}
+.richic{flex:none;width:22px;height:22px;border-radius:7px;display:flex;align-items:center;justify-content:center;}
+.richic svg{width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+.richbullet{display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.45;}
+.richdot{flex:none;width:6px;height:6px;border-radius:50%;background:var(--muted2);margin-top:7px;}
+.richpara{font-size:14px;line-height:1.5;}
+.botintro{background:var(--gold-soft);border-radius:14px;padding:14px 15px;margin-bottom:6px;
+  box-shadow:inset 0 0 0 1px var(--gold-line);}
+.botintrohd{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:var(--gold);
+  text-transform:uppercase;letter-spacing:.03em;margin-bottom:8px;}
+.botintrotext{font-size:13.5px;line-height:1.55;color:var(--text);}
+.guiderow{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-top:1px solid var(--border);}
+.guiderow:first-of-type{border-top:none;}
+.guideic{flex:none;width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;}
+.guideic svg{width:20px;height:20px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+.guidename{font-size:14.5px;font-weight:700;margin-bottom:2px;}
+.guidedesc{font-size:13px;color:var(--muted);line-height:1.45;}
 .aitag svg{width:14px;height:14px;stroke:currentColor;stroke-width:1.9;fill:none;}
 .askglyph svg{width:34px;height:34px;stroke:currentColor;stroke-width:1.7;fill:none;}
 .coopmark svg{stroke:currentColor;stroke-width:1.9;fill:none;}
@@ -837,7 +861,7 @@ function Login(){
 
 /* ── tasks ───────────────────────────────────────────────── */
 function TasksTab({me, people, tasks, coops, members, goals, requests, reqTargets, roleProjects, roleMembers, roleItems, reload, openCoopId, setOpenCoopId, gotoGoals}){
-  const [seg,setSeg]=useState('all');
+  const [seg,setSeg]=useState('active');
   const [slideDir,setSlideDir]=useState(0);   // -1 slide from left, 1 from right, for the swipe feel
   const [quick,setQuick]=useState('');
   const [sel,setSel]=useState(null);
@@ -3474,7 +3498,7 @@ function TeamTab({me, people, coops, members}){
               <div key={m.id} className={'askmsg '+(m.role==='user'?'me':'ai')}>
                 {m.role==='coach'&&<div className="aitag">{ICON.coach} Coach{m.is_weekly?' \u00b7 Weekly note':''}</div>}
                 {m.role==='user'&&<div className="aitag" style={{color:'var(--muted)'}}>{first(coachView.name)}</div>}
-                <div className="askbody">{m.content}</div>
+                <div className="askbody">{m.role==='coach'?<RichText text={m.content}/>:m.content}</div>
               </div>
             ))}
             {coachErr&&<div className="err" style={{margin:'4px 2px'}}>{coachErr}</div>}
@@ -3640,7 +3664,7 @@ function MembersSheet({me, people, onClose, reload}){
 }
 
 /* ── settings ────────────────────────────────────────────── */
-function SettingsSheet({me, onClose, openMembers, goTeam}){
+function SettingsSheet({me, onClose, openMembers, goTeam, openGuide}){
   const [msg,setMsg]=useState(''); const [err,setErr]=useState('');
   const [subOn,setSubOn]=useState(false);
   const [pwMode,setPwMode]=useState(false);
@@ -3735,6 +3759,9 @@ function SettingsSheet({me, onClose, openMembers, goTeam}){
       </>}
 
       <div className="lbl">Account</div>
+      <button className="opt" onClick={()=>{ onClose(); openGuide&&openGuide(); }}>
+        <Ic name="coach" className="gold"/><span className="grow">How WIOS works</span><span>›</span>
+      </button>
       {!pwMode?(
         <button className="opt" onClick={()=>{setPwMode(true);setErr('');setMsg('');}}>
           <Ic name="key" className="muted"/><span className="grow">Change password</span><span>›</span>
@@ -3766,6 +3793,104 @@ function SettingsSheet({me, onClose, openMembers, goTeam}){
         Sign out
       </button>
     </Sheet>
+  );
+}
+
+/* First-run guide: explains the four ways to give work, since Task, Coop, Role, and Request
+   are easy to confuse at first. */
+function GuideSheet({onClose}){
+  const items=[
+    {icon:ICON.tasks, bg:'#ECF1F7', fg:'#3A6EA5', name:'Task', desc:'A to-do for yourself. Just you, your own work.'},
+    {icon:ICON.coop, bg:'#E7F1EC', fg:'#2E9E68', name:'Coop', desc:'A relay with others. One person holds it at a time and passes it on when their part is done, like a baton.'},
+    {icon:ICON.roles, bg:'#F5EEE2', fg:'#B0863E', name:'Role task', desc:'A shared project where each person owns their own part. Everyone works at the same time, and each marks their part done.'},
+    {icon:ICON.request, bg:'#EFEDF3', fg:'#6E62A0', name:'Request', desc:'Ask one thing of one or more people. They see it as something to do for you.'},
+  ];
+  return (
+    <Sheet onClose={onClose}>
+      <h3>Welcome to WIOS</h3>
+      <div className="sub">Four ways to move work. Here is the difference.</div>
+      {items.map(it=>(
+        <div key={it.name} className="guiderow">
+          <span className="guideic" style={{background:it.bg,color:it.fg}}>{it.icon}</span>
+          <div className="grow">
+            <div className="guidename">{it.name}</div>
+            <div className="guidedesc">{it.desc}</div>
+          </div>
+        </div>
+      ))}
+      <button className="btn btn-gold" style={{width:'100%',marginTop:12}} onClick={onClose}>Got it</button>
+    </Sheet>
+  );
+}
+
+/* Renders a bot answer written in a light "## Header" + "- bullet" format into a clean,
+   scannable card with coloured section headers and bullet markers, so it is easy to grasp
+   at a glance instead of a wall of text. Plain text still renders fine. */
+const SECTION_ICON={
+  'where you stand':{ic:ICON.goals,c:'#3A6EA5'},
+  'what went well':{ic:ICON.tasks,c:'#2E9E68'},
+  'what is missing':{ic:ICON.request,c:'#B0863E'},
+  'franchise readiness':{ic:ICON.roles,c:'#6E62A0'},
+  'questions for you':{ic:ICON.coach,c:'#3A6EA5'},
+  'focus this week':{ic:ICON.brief,c:'#3A6EA5'},
+  'watch this week':{ic:ICON.request,c:'#B0863E'},
+};
+function RichText({text}){
+  const lines=String(text||'').split('\n');
+  const blocks=[]; let cur=null;
+  const flush=()=>{ if(cur){ blocks.push(cur); cur=null; } };
+  for(let raw of lines){
+    const line=raw.replace(/\s+$/,'');
+    if(!line.trim()){ flush(); continue; }
+    const h=line.match(/^#{1,3}\s+(.*)$/);
+    if(h){ flush(); const key=h[1].trim().toLowerCase(); cur={type:'sect',title:h[1].trim(),meta:SECTION_ICON[key],items:[]}; continue; }
+    const b=line.match(/^\s*[-*]\s+(.*)$/);
+    if(b){ if(!cur||cur.type!=='sect'){ if(cur&&cur.type==='bullets'){} else { flush(); cur={type:'bullets',items:[]}; } } cur.items.push(b[1]); continue; }
+    // inline "Label: rest"
+    if(!cur||cur.type==='sect'){ if(cur&&cur.type==='sect'){ cur.items.push(line); continue; } }
+    if(!cur||cur.type!=='para'){ flush(); cur={type:'para',text:line}; }
+    else cur.text+=' '+line;
+  }
+  flush();
+  const renderInline=(s)=>{
+    // bold a leading "Label:" and **bold**
+    const parts=[]; let str=s;
+    const lead=str.match(/^([A-Z][A-Za-z ]{1,24}:)\s*(.*)$/);
+    if(lead){ parts.push(<b key="l">{lead[1]} </b>); str=lead[2]; }
+    // simple **bold**
+    const segs=str.split(/(\*\*[^*]+\*\*)/g).filter(Boolean);
+    segs.forEach((seg,i)=>{ const m=seg.match(/^\*\*([^*]+)\*\*$/); parts.push(m?<b key={i}>{m[1]}</b>:<span key={i}>{seg}</span>); });
+    return parts;
+  };
+  return (
+    <div className="rich">
+      {blocks.map((bl,i)=>{
+        if(bl.type==='sect'){
+          const m=bl.meta;
+          return (
+            <div key={i} className="richsect">
+              <div className="richhd" style={m?{color:m.c}:undefined}>
+                {m&&<span className="richic" style={{background:m.c+'1f',color:m.c}}>{m.ic}</span>}
+                <span>{bl.title}</span>
+              </div>
+              {bl.items.map((it,j)=>(
+                <div key={j} className="richbullet"><span className="richdot" style={m?{background:m.c}:undefined}/><span className="grow">{renderInline(it)}</span></div>
+              ))}
+            </div>
+          );
+        }
+        if(bl.type==='bullets'){
+          return (
+            <div key={i} className="richsect">
+              {bl.items.map((it,j)=>(
+                <div key={j} className="richbullet"><span className="richdot"/><span className="grow">{renderInline(it)}</span></div>
+              ))}
+            </div>
+          );
+        }
+        return <div key={i} className="richpara">{renderInline(bl.text)}</div>;
+      })}
+    </div>
   );
 }
 
@@ -3830,19 +3955,19 @@ function CoachingSheet({me, onClose}){
           <div className="askmsg ai"><div className="aitag">{ICON.coach} Coach</div>
             <div className="askbody"><span className="dots"><i/><i/><i/></span></div></div>
         )}
-        {!loading&&thread.length===0&&!err&&(
-          <div className="askintro">
-            <div className="askglyph" style={{color:'var(--gold)'}}>{ICON.coach}</div>
-            <div className="asktitle">Your weekly coach</div>
-            <div className="note" style={{textAlign:'center',maxWidth:300,margin:'0 auto'}}>
-              Every Monday you get honest feedback on last week, measured against your role as {me.role}. Your first note appears here at the start of the week. You can also just talk to your coach anytime.
+        {!loading&&!thread.some(m=>m.role==='user')&&!err&&(
+          <div className="botintro">
+            <div className="botintrohd"><span className="richic" style={{background:'var(--gold-soft)',color:'var(--gold)'}}>{ICON.coach}</span>
+              <span>Coaching bot</span></div>
+            <div className="botintrotext">
+              Hi {(me.name||'').split(' ')[0]||me.name}, I am your coaching bot. I review your tasks and performance and give you clear, honest feedback on how you are doing as {me.role}. My job is to help you grow into a great {me.role}, using your own work and what strong {me.role}s should be doing. Every Monday I look at last week and tell you what improved, what did not, and what to focus on. Talk to me anytime, I will ask you questions to help you think it through.
             </div>
           </div>
         )}
         {thread.map(m=>(
           <div key={m.id} className={'askmsg '+(m.role==='user'?'me':'ai')}>
             {m.role==='coach'&&<div className="aitag">{ICON.coach} Coach{m.is_weekly?' \u00b7 Weekly note':''}</div>}
-            <div className="askbody">{m.content}</div>
+            <div className="askbody">{m.role==='coach'?<RichText text={m.content}/>:m.content}</div>
           </div>
         ))}
         {busy&&(
@@ -3923,19 +4048,19 @@ function CeoBriefSheet({me, onClose}){
           <div className="askmsg ai"><div className="aitag">{ICON.brief} Assistant</div>
             <div className="askbody"><span className="dots"><i/><i/><i/></span></div></div>
         )}
-        {!loading&&thread.length===0&&!err&&(
-          <div className="askintro">
-            <div className="askglyph" style={{color:'var(--gold)'}}>{ICON.brief}</div>
-            <div className="asktitle">Your CEO assistant</div>
-            <div className="note" style={{textAlign:'center',maxWidth:300,margin:'0 auto'}}>
-              Every Monday, a candid rundown of each leader's week: what they did, what their coach told them, and whether they are acting on it. Ask follow-ups anytime.
+        {!loading&&!thread.some(m=>m.role==='user')&&!err&&(
+          <div className="botintro">
+            <div className="botintrohd"><span className="richic" style={{background:'var(--gold-soft)',color:'var(--gold)'}}>{ICON.brief}</span>
+              <span>CEO assistant</span></div>
+            <div className="botintrotext">
+              Hi {(me.name||'').split(' ')[0]||me.name}, I am your CEO assistant. Every Monday I give you a candid rundown of each C-level leader: what they did last week, what their coach told them, and whether they are acting on it. Think of me as your inside read on the team. Ask me anything about how your leaders are doing.
             </div>
           </div>
         )}
         {thread.map(m=>(
           <div key={m.id} className={'askmsg '+(m.role==='user'?'me':'ai')}>
             {m.role!=='user'&&<div className="aitag">{ICON.brief} Assistant{m.is_weekly?' \u00b7 Monday brief':''}</div>}
-            <div className="askbody">{m.content}</div>
+            <div className="askbody">{m.role!=='user'?<RichText text={m.content}/>:m.content}</div>
           </div>
         ))}
         {busy&&(
@@ -4018,7 +4143,7 @@ function AskTab({me}){
         {msgs.map((m,i)=>(
           <div key={i} className={'askmsg '+(m.role==='user'?'me':'ai')}>
             {m.role==='assistant'&&<div className="aitag">✦ WIOS</div>}
-            <div className="askbody">{m.content}</div>
+            <div className="askbody">{m.role==='assistant'?<RichText text={m.content}/>:m.content}</div>
           </div>
         ))}
         {busy&&(
@@ -4121,8 +4246,15 @@ function App(){
   const [showNotifs,setShowNotifs]=useState(false);
   const [notifs,setNotifs]=useState([]);
   const [pushPrompt,setPushPrompt]=useState(false);
+  const [showGuide,setShowGuide]=useState(false);
   const [busy,setBusy]=useState(false);
   const ensured=useRef(false);
+
+  // First run only: show the quick "how it works" guide once.
+  useEffect(()=>{
+    try{ if(!localStorage.getItem('wios-guide-seen')) setShowGuide(true); }catch(e){}
+  },[]);
+  function closeGuide(){ try{localStorage.setItem('wios-guide-seen','1');}catch(e){} setShowGuide(false); }
 
   // First run only: offer to turn on notifications once, then never nag again.
   useEffect(()=>{
@@ -4372,8 +4504,9 @@ function App(){
       )}
       {showSettings&&<SettingsSheet me={me} onClose={()=>setShowSettings(false)}
         openMembers={()=>{ setShowSettings(false); setShowMembers(true); }}
-        goTeam={()=>setTab('team')}/>}
+        goTeam={()=>setTab('team')} openGuide={()=>setShowGuide(true)}/>}
       {showCoach&&<CoachingSheet me={me} onClose={()=>setShowCoach(false)}/>}
+      {showGuide&&<GuideSheet onClose={closeGuide}/>}
       {showCeoBrief&&<CeoBriefSheet me={me} onClose={()=>setShowCeoBrief(false)}/>}
       {showMembers&&<MembersSheet me={me} people={allPeople}
         onClose={()=>setShowMembers(false)} reload={load}/>}

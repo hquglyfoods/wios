@@ -69,6 +69,12 @@ For each leader, judge their week against the definition of THEIR seat in the ro
 You are given each leader's records (tasks, goals) for last week AND their private coaching notes and coaching chat. Use the coaching material to tell the CEO what the coach advised and, importantly, whether the leader appears to be acting on it or ignoring it. Cite specific real examples. Never invent tasks, dates, numbers, or quotes.
 Never use em dashes. Use commas, periods, or parentheses instead. Keep it readable on a phone.
 
+FORMAT (the CEO wants to grasp it at a glance, not read a wall of text):
+- For each leader, use a header line "## ROLE Name" (for example "## COO Jiwoon").
+- Under each, use short "- " bullets grouped by these labels on their own lines: "Did well:", "Missing:", "Coaching:" (what the coach advised and whether they are acting on it).
+- End the whole brief with a "## Watch this week" section of short "- " bullets across the team.
+Keep bullets to one or two sentences. Be candid and specific.
+
 ROLE REFERENCE:
 ${ROLES_DOC}`;
 
@@ -135,12 +141,8 @@ ${chatLines}`);
       if (!existing.length) {
         const { block } = await teamBlock();
         const prompt =
-`Write the CEO's Monday brief for last week. Go leader by leader (CEO, CBO, CMO, COO, CPO as present). For EACH leader give:
-1. What they did well.
-2. What was missing or below their seat's level.
-3. What their coach advised, and whether they seem to be acting on it or not (call out if they are ignoring coaching).
-Then finish with a short "What to watch this week" list for the CEO across the team.
-Be candid and specific with real examples. Talk straight to the CEO.
+`Write the CEO's Monday brief for last week using the exact section format from your instructions: a "## ROLE Name" header per leader (CEO, CBO, CMO, COO, CPO as present), then "- " bullets under "Did well:", "Missing:", and "Coaching:" (what the coach advised and whether they are acting on it, call out if they are ignoring it). Finish with a "## Watch this week" section of short bullets across the team.
+Be candid and specific with real examples. Do not invent anything. Talk straight to the CEO.
 
 ${block}`;
         const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
