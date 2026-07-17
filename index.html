@@ -266,6 +266,9 @@ body.kb-open .askwrap{bottom:calc(var(--kb, 0px) + env(safe-area-inset-bottom) +
 .asksug{text-align:left;padding:12px 14px;border-radius:12px;background:var(--panel);
   box-shadow:inset 0 0 0 1px var(--border);color:var(--text);font-size:13.5px;font-weight:500;min-height:var(--tap);}
 .asksug:active{box-shadow:inset 0 0 0 1px var(--border2);}
+.asksug.feat{background:var(--gold-soft);box-shadow:inset 0 0 0 1.5px var(--gold-line);color:var(--gold);font-weight:600;
+  display:flex;align-items:center;gap:8px;}
+.asksug.feat::before{content:'\2726';font-size:13px;flex:none;}
 .askmsg{max-width:88%;}
 .askmsg.me{align-self:flex-end;background:var(--gold-soft);box-shadow:inset 0 0 0 1px var(--gold-line);
   border-radius:14px 14px 4px 14px;padding:10px 13px;}
@@ -514,9 +517,11 @@ body.kb-open .askwrap{bottom:calc(var(--kb, 0px) + env(safe-area-inset-bottom) +
   font-size:13.5px;margin-bottom:14px;box-shadow:inset 0 0 0 1px var(--gold-line);}
 .roleadd{padding-top:8px;}
 
-.gmetricrow{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
-.gmetric{flex:1;min-width:0;white-space:nowrap;font-size:11.5px;padding:8px 6px;border-radius:20px;
-  background:var(--panel2);color:var(--muted2);font-weight:600;text-align:center;}
+.gmetricrow{display:flex;gap:6px;margin-bottom:12px;align-items:stretch;}
+.gmetric{flex:1;min-width:0;font-size:11px;line-height:1.2;padding:8px 6px;border-radius:12px;
+  background:var(--panel2);color:var(--muted2);font-weight:600;text-align:center;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;overflow-wrap:anywhere;
+  hyphens:auto;min-height:42px;}
 .gmetric.on{background:var(--gold-soft);color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold-line);}
 .gbars{display:flex;flex-direction:column;gap:9px;}
 .gbarrow{display:flex;align-items:center;gap:10px;}
@@ -3693,9 +3698,10 @@ function AskTab({me}){
   const [err,setErr]=useState('');
   const endRef=useRef(null);
 
+  const roleFitQ = `Based on my past tasks, am I doing what fits my role as ${me.role}?`;
   const suggestions = me.is_admin
-    ? ['What did I do last week?','What did the team finish this month?','When did I last work on the loan package?','Which goals are still open?']
-    : ['What did I do last week?','What did I finish this month?','What am I waiting on?','Which goals are still open?'];
+    ? [roleFitQ,'What did I do last week?','What did the team finish this month?','Which goals are still open?']
+    : [roleFitQ,'What did I do last week?','What am I waiting on?','Which goals are still open?'];
 
   useEffect(()=>{ endRef.current&&endRef.current.scrollIntoView({block:'end'}); },[msgs,busy]);
 
@@ -3736,7 +3742,7 @@ function AskTab({me}){
             </div>
             <div className="asksugs">
               {suggestions.map((s,i)=>(
-                <button key={i} className="asksug" onClick={()=>ask(s)}>{s}</button>
+                <button key={i} className={'asksug'+(i===0?' feat':'')} onClick={()=>ask(s)}>{s}</button>
               ))}
             </div>
           </div>
