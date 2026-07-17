@@ -103,6 +103,17 @@ exports.handler = async () => {
       report.coopReminders = (report.coopReminders || 0) + 1;
     }
 
+    // ── 2c. Deadline reminders: push 24h before a task's "finish before" time ──
+    const in24h = new Date(Date.now() + 24 * 3600000).toISOString();
+    const dueSoonTasks = await sb(`wios_tasks?status=eq.active&due_reminded=eq.false&due_at=lte.${encodeURIComponent(in24h)}&due_at=gt.${encodeURIComponent(nowIso)}&select=id,owner_id,title,due_at`);
+    for (const t of dueSoonTasks) {
+      await pushToUsers([t.owner_id], {
+        title: 'Due within 24 hours', body: t.title, tag: 'wios-due-' + t.id, url: '/', kind: 'task',
+      }, env);
+      await sb(`wios_tasks?id=eq.${t.id}`, { method: 'PATCH', body: JSON.stringify({ due_reminded: true }) });
+      report.dueReminders = (report.dueReminders || 0) + 1;
+    }
+
     // ── 3. Recurring reminders ──────────────────────────────
     const recs = await sb('wios_recurrings?active=eq.true&select=*');
     for (const r of recs) {

@@ -47,6 +47,8 @@ create table if not exists public.wios_tasks (
   system_ref text,                           -- e.g. 'week:2026-07-13'
   sort_order double precision,               -- manual ordering within Active (lower = higher up)
   subtasks jsonb not null default '[]'::jsonb, -- [{id, text, done}]
+  due_at timestamptz,                          -- optional "finish before" deadline
+  due_reminded boolean not null default false, -- so the 24h-before push fires once
   created_at timestamptz not null default now(),
   completed_at timestamptz
 );
@@ -56,6 +58,8 @@ create unique index if not exists wios_tasks_sysref_uq
 -- upgrade path for an earlier install
 alter table public.wios_tasks add column if not exists sort_order double precision;
 alter table public.wios_tasks add column if not exists subtasks jsonb not null default '[]'::jsonb;
+alter table public.wios_tasks add column if not exists due_at timestamptz;
+alter table public.wios_tasks add column if not exists due_reminded boolean not null default false;
 
 -- ── 3. Coop tasks (relay / baton model) ─────────────────────
 create table if not exists public.wios_coops (

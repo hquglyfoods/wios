@@ -53,7 +53,8 @@ button{cursor:pointer;border:none;background:none;padding:0;}
 .iconbtn{width:var(--tap);height:var(--tap);border-radius:12px;background:var(--panel);border:1px solid var(--border);
   color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:19px;flex:none;position:relative;}
 .iconbtn:active{background:var(--panel2);}
-.iconbtn.bell{font-size:18px;}
+.iconbtn svg{width:21px;height:21px;stroke:currentColor;stroke-width:1.9;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+.iconbtn.bell{color:var(--gold);}
 .belldot{position:absolute;top:5px;right:5px;min-width:16px;height:16px;border-radius:8px;background:var(--red);
   color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;border:2px solid var(--panel);}
 .main{padding:14px 14px 120px;}
@@ -138,6 +139,9 @@ button{cursor:pointer;border:none;background:none;padding:0;}
   font-weight:600;font-size:14px;text-align:left;color:var(--text);min-height:var(--tap);}
 .opt:active{box-shadow:inset 0 0 0 1px var(--border2);}
 .opt .g{width:22px;text-align:center;flex:none;font-size:15px;}
+.opt .ic{width:22px;flex:none;color:var(--muted);}
+.opt.danger{color:var(--red);}
+.opt.danger .ic{color:var(--red);}
 .opt .grow{overflow-wrap:anywhere;}
 
 .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
@@ -270,13 +274,23 @@ button{cursor:pointer;border:none;background:none;padding:0;}
 .card.task.dragging{opacity:.4;}
 .card.task.dragover{box-shadow:0 0 0 2px var(--gold);}
 .draghandle{flex:none;color:var(--muted2);font-size:18px;cursor:grab;padding:0 4px;touch-action:none;}
-.quickcheck{width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;margin:-6px 0 -6px -8px;}
-.quickcheck .qc{width:22px;height:22px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--border2);transition:all .15s;}
-.quickcheck:active .qc{box-shadow:inset 0 0 0 2px var(--gold);background:var(--gold-soft);}
-.trash{width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;
-  font-size:15px;opacity:.5;border-radius:10px;margin:-6px -8px -6px 0;}
-.trash:active{opacity:1;background:var(--panel2);}
-.notemark{font-size:12px;color:var(--muted2);}
+/* generic inline icon */
+.ic{display:inline-flex;align-items:center;justify-content:center;}
+.ic svg{width:20px;height:20px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+
+/* mark-done button on cards: a real, tappable green circle */
+.quickcheck{width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;margin:-6px 0 -6px -6px;}
+.quickcheck .qc{width:26px;height:26px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--border2);
+  display:flex;align-items:center;justify-content:center;color:transparent;transition:all .15s;}
+.quickcheck .qc svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.6;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+.quickcheck:active .qc{box-shadow:inset 0 0 0 2px var(--green);background:var(--green);color:#fff;}
+/* trash button on cards: visible red-tinted target */
+.trash{width:40px;height:40px;flex:none;display:flex;align-items:center;justify-content:center;
+  color:var(--red);border-radius:10px;box-shadow:inset 0 0 0 1px var(--line);margin:-4px -6px -4px 4px;background:var(--panel);}
+.trash svg{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+.trash:active{background:#FCEBEA;box-shadow:inset 0 0 0 1px var(--red);}
+.notemark{color:var(--muted2);display:inline-flex;}
+.notemark svg{width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none;}
 .chip.sub{background:var(--gold-soft);color:var(--gold);}
 .subrow{display:flex;align-items:center;gap:8px;padding:6px 4px;}
 .subdone{color:var(--muted);text-decoration:line-through;}
@@ -304,8 +318,10 @@ button{cursor:pointer;border:none;background:none;padding:0;}
 
 /* add task / add coop row */
 .addrow{display:flex;gap:10px;margin:0 0 14px;}
-.addbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:600;}
-.addbtn svg{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+.addbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:600;
+  background:var(--gold-soft);color:var(--gold);box-shadow:inset 0 0 0 1.5px var(--gold-line);min-height:48px;}
+.addbtn:active{background:rgba(46,111,214,.16);}
+.addbtn svg{width:19px;height:19px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
 .addbtn svg{width:17px;height:17px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
 
 /* coop card inside tasks */
@@ -325,6 +341,18 @@ button{cursor:pointer;border:none;background:none;padding:0;}
 .pbtn.on{background:var(--gold-soft);box-shadow:inset 0 0 0 2px var(--gold);color:var(--gold);}
 
 .lvl{font-size:10.5px;font-weight:700;border-radius:7px;padding:2px 8px;letter-spacing:.02em;}
+
+.ic.gold{color:var(--gold);}
+.ic.muted{color:var(--muted2);}
+.ic.green{color:var(--green);}
+.ic.red{color:var(--red);}
+.opt.on{background:var(--gold-soft);box-shadow:inset 0 0 0 1.5px var(--gold);}
+.chip.due{background:#EAF1FF;color:var(--gold);}
+.chip.due.urgent{background:#FCEBEA;color:var(--red);}
+
+.handoffbar{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:12px;
+  background:var(--gold-soft);box-shadow:inset 0 0 0 1px var(--gold-line);margin-bottom:10px;}
+.handoffbar .ic{flex:none;}
 
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important;}}
 </style>
@@ -357,7 +385,24 @@ const ICON = {
   daily: <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v3.5h-3.5"/></svg>,
   ask:   <svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4z"/><path d="M18 15l.9 2.3L21 18l-2.1.7L18 21l-.9-2.3L15 18l2.1-.7z"/></svg>,
   team:  <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 6.5a3 3 0 0 1 0 5.6"/><path d="M17.5 14.2A5.5 5.5 0 0 1 20.5 19"/></svg>,
+  check: <svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg>,
+  star:  <svg viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.25 4.1 1 5.85L12 16.9l-5.25 2.75 1-5.85L3.5 9.7l5.9-.9z"/></svg>,
+  starFill: <svg viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.25 4.1 1 5.85L12 16.9l-5.25 2.75 1-5.85L3.5 9.7l5.9-.9z" fill="currentColor"/></svg>,
+  clock: <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>,
+  calendar: <svg viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="15" rx="2.5"/><path d="M4 10h16M8 3.5v4M16 3.5v4"/></svg>,
+  handoff: <svg viewBox="0 0 24 24"><path d="M4 8h11l-2-2M4 8l2 2"/><path d="M20 16H9l2 2M20 16l-2-2"/></svg>,
+  trash: <svg viewBox="0 0 24 24"><path d="M5 7h14M10 4h4M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>,
+  pause: <svg viewBox="0 0 24 24"><path d="M9 6v12M15 6v12"/></svg>,
+  play:  <svg viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z" fill="currentColor" stroke="none"/></svg>,
+  members: <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 6.5a3 3 0 0 1 0 5.6"/><path d="M17.5 14.2A5.5 5.5 0 0 1 20.5 19"/></svg>,
+  key:   <svg viewBox="0 0 24 24"><circle cx="8" cy="12" r="4"/><path d="M11.5 12H21M18 12v3M15 12v2.5"/></svg>,
+  bell:  <svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2.5h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>,
+  gear:  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.5M12 18.5V21M4.2 7.5l2.2 1.2M17.6 15.3l2.2 1.2M4.2 16.5l2.2-1.2M17.6 8.7l2.2-1.2"/></svg>,
+  back:  <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>,
+  undo:  <svg viewBox="0 0 24 24"><path d="M9 7L4 12l5 5"/><path d="M4 12h11a5 5 0 0 1 0 10h-1"/></svg>,
+  note:  <svg viewBox="0 0 24 24"><path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="M14 7l3 3"/></svg>,
 };
+const Ic = ({name,className,style}) => <span className={'ic '+(className||'')} style={style}>{ICON[name]}</span>;
 
 /* ── helpers ─────────────────────────────────────────────── */
 const pad = n => String(n).padStart(2,'0');
@@ -391,6 +436,7 @@ function fmtShort(ts){ if(!ts)return''; const d=new Date(ts);
   return `${MON[d.getMonth()]} ${d.getDate()}, ${d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}`; }
 function fmtDay(ts){ if(!ts)return''; const d=new Date(ts); return `${MON[d.getMonth()]} ${d.getDate()}`; }
 function daysAgo(ts){ if(!ts)return 0; return Math.max(0, Math.floor((Date.now()-new Date(ts))/86400000)); }
+function dueSoon(ts){ if(!ts) return false; const ms=new Date(ts)-Date.now(); return ms<=86400000; } // within 24h or overdue
 function ageLabel(ts){ const d=daysAgo(ts);
   if(d===0) return 'added today';
   if(d===1) return 'day 2';           // on its 2nd day
@@ -593,6 +639,7 @@ function TasksTab({me, people, tasks, coops, members, goals, reload, openCoopId,
   const [showNewTask,setShowNewTask]=useState(false);
   const [newTaskTitle,setNewTaskTitle]=useState('');
   const [newTaskUrgent,setNewTaskUrgent]=useState(false);
+  const [newTaskDue,setNewTaskDue]=useState('');
   const [declining,setDeclining]=useState(null); const [declineMsg,setDeclineMsg]=useState('');
 
   const cLabel=id=>{ const p=people.find(x=>x.id===id); return p?`${p.role} ${first(p.name)}`:'someone'; };
@@ -648,8 +695,9 @@ function TasksTab({me, people, tasks, coops, members, goals, reload, openCoopId,
     const title=newTaskTitle.trim(); if(!title||busy) return;
     setBusy(true);
     try{
-      await sb.from('wios_tasks').insert({owner_id:me.id, title, status:'active', urgent:newTaskUrgent});
-      setShowNewTask(false); setNewTaskTitle(''); setNewTaskUrgent(false);
+      await sb.from('wios_tasks').insert({owner_id:me.id, title, status:'active', urgent:newTaskUrgent,
+        due_at: newTaskDue? new Date(newTaskDue).toISOString() : null});
+      setShowNewTask(false); setNewTaskTitle(''); setNewTaskUrgent(false); setNewTaskDue('');
       reload();
     }catch(e){ alert(e.message||'Could not add this task.'); }
     setBusy(false);
@@ -814,7 +862,7 @@ function TasksTab({me, people, tasks, coops, members, goals, reload, openCoopId,
             )}
           </div>
           {!request&&c.creator_id===me.id&&(
-            <button className="trash" onClick={e=>{e.stopPropagation();deleteCoopCard(c);}} aria-label="Delete coop">🗑</button>
+            <button className="trash" onClick={e=>{e.stopPropagation();deleteCoopCard(c);}} aria-label="Delete coop">{ICON.trash}</button>
           )}
         </div>
         {request&&(
@@ -852,10 +900,10 @@ function TasksTab({me, people, tasks, coops, members, goals, reload, openCoopId,
       )}
 
       <div className="addrow">
-        <button className="btn btn-line addbtn" onClick={()=>{ setNewTaskTitle(''); setShowNewTask(true); }}>
+        <button className="btn addbtn" onClick={()=>{ setNewTaskTitle(''); setShowNewTask(true); }}>
           {ICON.tasks}<span>Task</span>
         </button>
-        <button className="btn btn-line addbtn" onClick={()=>{ setSendTo(null); setSendMsg(''); setShowNewCoop(true); }}>
+        <button className="btn addbtn" onClick={()=>{ setSendTo(null); setSendMsg(''); setShowNewCoop(true); }}>
           {ICON.coop}<span>Coop</span>
         </button>
       </div>
@@ -918,7 +966,7 @@ function TasksTab({me, people, tasks, coops, members, goals, reload, openCoopId,
             {sortMode&&seg==='active'&&<span className="draghandle" aria-label="Drag">⠿</span>}
             {!sortMode&&(seg==='active'||seg==='waiting'||seg==='scheduled')&&(
               <button className="quickcheck" onClick={e=>{e.stopPropagation();markDone(t);}} aria-label="Mark done">
-                <span className="qc"/>
+                <span className="qc">{ICON.check}</span>
               </button>
             )}
             <div className="grow">
@@ -928,17 +976,18 @@ function TasksTab({me, people, tasks, coops, members, goals, reload, openCoopId,
                 {t.reminded&&t.status==='active'&&<span className="chip back">Followup</span>}
                 {t.is_system&&<span className="chip sys">{t.system_kind==='recurring'?'Recurring':'Goals'}</span>}
                 {subs.length>0&&<span className="chip sub">{subDone}/{subs.length}</span>}
-                {t.notes&&<span className="notemark" aria-label="Has notes">✎</span>}
+                {t.notes&&<span className="notemark" aria-label="Has notes">{ICON.note}</span>}
                 {t.status==='active'&&<span className={'age'+(daysAgo(t.created_at)>=7?' old':'')}>
                   {ageLabel(t.created_at)}</span>}
                 {t.status==='waiting'&&
                   <span>{daysAgo(t.waiting_since||t.created_at)}d waiting, back {inWords(t.remind_at)}</span>}
                 {t.status==='scheduled'&&<span>Starts {fmtShort(t.scheduled_at)}</span>}
+                {t.due_at&&t.status==='active'&&<span className={'chip due'+(dueSoon(t.due_at)?' urgent':'')}>Due {fmtShort(t.due_at)}</span>}
                 {t.status==='done'&&<span>Done {fmtDay(t.completed_at)}</span>}
               </div>
             </div>
             {!sortMode&&(
-              <button className="trash" onClick={e=>{e.stopPropagation();delTask(t);}} aria-label="Delete">🗑</button>
+              <button className="trash" onClick={e=>{e.stopPropagation();delTask(t);}} aria-label="Delete">{ICON.trash}</button>
             )}
           </div>
         </div>
@@ -955,6 +1004,21 @@ function TasksTab({me, people, tasks, coops, members, goals, reload, openCoopId,
 
           {mode==='main'&&(
             <div>
+              {sendTo&&(
+                <div className="handoffbar">
+                  <Ic name="handoff" className="gold"/>
+                  <div className="grow">
+                    <div style={{fontWeight:600,fontSize:14}}>Hand off to {(()=>{const p=people.find(x=>x.id===sendTo);return p?`${p.role} ${first(p.name)}`:'teammate';})()}</div>
+                    {sendMsg&&<div className="note" style={{marginTop:2}}>"{sendMsg}"</div>}
+                  </div>
+                  <button className="xbtn" onClick={()=>{setSendTo(null);setSendMsg('');}} aria-label="Cancel handoff">×</button>
+                </div>
+              )}
+              {sendTo&&(
+                <button className="btn btn-gold" style={{width:'100%',marginBottom:14}} disabled={busy} onClick={()=>sendTask(sel)}>
+                  {busy?'Sending...':'Send request'}
+                </button>
+              )}
               <div className="lbl">Subtasks {dSubs.length>0&&<span style={{color:'var(--gold)'}}>{dSubs.filter(s=>s.done).length}/{dSubs.length}</span>}</div>
               {dSubs.map(s=>(
                 <div key={s.id} className="subrow">
@@ -979,40 +1043,40 @@ function TasksTab({me, people, tasks, coops, members, goals, reload, openCoopId,
 
               {sel.is_system&&sel.system_kind==='goal_prompt'&&sel.system_ref&&(
                 <button className="opt" onClick={()=>{ const tp=sel.system_ref.split(':')[0]; setSel(null); gotoGoals(tp); }}>
-                  <span className="g">🎯</span><span className="grow">Open Goals</span>
+                  <Ic name="goals" className="gold"/><span className="grow">Open Goals</span>
                 </button>
               )}
               {sel.status!=='done'&&(
                 <button className="opt" onClick={()=>markDone(sel)}>
-                  <span className="g">✅</span><span className="grow">Mark done</span>
+                  <Ic name="check" className="green"/><span className="grow">Mark done</span>
                 </button>
               )}
               {sel.status==='done'&&(
                 <button className="opt" onClick={()=>patch(sel,{status:'active',completed_at:null})}>
-                  <span className="g">↩️</span><span className="grow">Move back to Active</span>
+                  <Ic name="undo" className="muted"/><span className="grow">Move back to Active</span>
                 </button>
               )}
               {sel.status!=='done'&&(
                 <button className="opt" onClick={()=>patch(sel,{urgent:!sel.urgent})}>
-                  <span className="g">⭐</span>
+                  <Ic name={sel.urgent?'starFill':'star'} className="gold"/>
                   <span className="grow">{sel.urgent?'Remove urgent':'Mark urgent, pin to top'}</span>
                 </button>
               )}
               {sel.status!=='done'&&!sel.is_system&&<>
                 <button className="opt" onClick={()=>setMode('waiting')}>
-                  <span className="g">⏳</span><span className="grow">Waiting on someone, remind me later</span>
+                  <Ic name="clock" className="muted"/><span className="grow">Waiting on someone, remind me later</span>
                 </button>
                 <button className="opt" onClick={()=>setMode('schedule')}>
-                  <span className="g">📅</span><span className="grow">Set aside until a date</span>
+                  <Ic name="calendar" className="muted"/><span className="grow">Set aside until a date</span>
                 </button>
                 <button className="opt" onClick={()=>setMode('send')}>
-                  <span className="g">🤝</span><span className="grow">Bring in a teammate, turn into a coop</span>
+                  <Ic name="handoff" className="gold"/><span className="grow">Bring in a teammate, turn into a coop</span>
                 </button>
               </>}
-              <button className="opt" style={{color:'var(--red)'}}
+              <button className="opt danger"
                 onClick={async()=>{ if(!confirm('Delete this task?'))return;
                   await sb.from('wios_tasks').delete().eq('id',sel.id); setSel(null); reload(); }}>
-                <span className="g">🗑</span><span className="grow">Delete</span>
+                <Ic name="trash" className="red"/><span className="grow">Delete</span>
               </button>
             </div>
           )}
@@ -1052,16 +1116,16 @@ function TasksTab({me, people, tasks, coops, members, goals, reload, openCoopId,
 
           {mode==='send'&&(
             <div>
-              <div className="lbl">Send to</div>
+              <div className="lbl">Hand off to</div>
               <PersonGrid people={people} value={sendTo} onChange={setSendTo} exclude={me.id}/>
               <textarea rows="2" placeholder="What do you need from them?" value={sendMsg}
                 onChange={e=>setSendMsg(e.target.value)}/>
               <div style={{height:12}}/>
-              <button className="btn btn-gold" style={{width:'100%'}} disabled={!sendTo||busy} onClick={()=>sendTask(sel)}>
-                {busy?'Sending...':'Send request'}
+              <button className="btn btn-gold" style={{width:'100%'}} disabled={!sendTo} onClick={()=>setMode('main')}>
+                Add teammate
               </button>
               <div className="note" style={{marginTop:10}}>
-                They can accept or respond. Once accepted it becomes a coop task you can both follow.
+                Pick who takes it next. You will confirm and send from the task screen.
               </div>
             </div>
           )}
@@ -1071,14 +1135,17 @@ function TasksTab({me, people, tasks, coops, members, goals, reload, openCoopId,
       {showNewTask&&(
         <Sheet onClose={()=>setShowNewTask(false)}>
           <h3>New task</h3>
-          <div className="sub">Something for you to do. Add it to your Active list.</div>
+          <div className="sub">Something for you to do. It goes in your Active list.</div>
           <input autoFocus placeholder="What needs doing?" value={newTaskTitle}
             onChange={e=>setNewTaskTitle(e.target.value)}
-            onKeyDown={e=>{ if(e.key==='Enter') createTask(); }}/>
-          <button className="opt" style={{marginTop:10}} onClick={()=>setNewTaskUrgent(!newTaskUrgent)}>
-            <span className="g">{newTaskUrgent?'⭐':'☆'}</span>
-            <span className="grow">{newTaskUrgent?'Urgent, pin to top':'Mark urgent'}</span>
+            onKeyDown={e=>{ if(e.key==='Enter'&&!newTaskDue) createTask(); }}/>
+          <button className={'opt'+(newTaskUrgent?' on':'')} style={{marginTop:10}} onClick={()=>setNewTaskUrgent(!newTaskUrgent)}>
+            <Ic name={newTaskUrgent?'starFill':'star'} className={newTaskUrgent?'gold':'muted'}/>
+            <span className="grow">{newTaskUrgent?'Urgent, pinned to top':'Mark urgent'}</span>
           </button>
+          <div className="lbl">Finish before (optional)</div>
+          <input type="datetime-local" value={newTaskDue} onChange={e=>setNewTaskDue(e.target.value)}/>
+          {newTaskDue&&<div className="note" style={{marginTop:6}}>A reminder is pushed 24 hours before this time.</div>}
           <div style={{height:12}}/>
           <button className="btn btn-gold" style={{width:'100%'}} disabled={!newTaskTitle.trim()||busy} onClick={createTask}>
             {busy?'Adding...':'Add task'}
@@ -1143,7 +1210,7 @@ function NewCoopSheet({me, people, onClose, reload}){
       <PersonGrid people={people} value={nTo} onChange={setNTo} exclude={me.id}/>
       <textarea rows="2" placeholder="Message (optional)" value={nMsg} onChange={e=>setNMsg(e.target.value)}/>
       <button className="opt" style={{marginTop:10}} onClick={()=>setNUrgent(!nUrgent)}>
-        <span className="g">{nUrgent?'⭐':'☆'}</span>
+        <Ic name={nUrgent?'starFill':'star'} className="gold"/>
         <span className="grow">{nUrgent?'Urgent':'Mark urgent'}</span>
       </button>
       <div style={{height:6}}/>
@@ -1263,7 +1330,7 @@ function CoopDetail({me, people, coop, members, onClose, reload}){
         </div>
         {coop.creator_id===me.id&&(
           <button className="iconbtn" onClick={deleteCoop} disabled={busy} aria-label="Delete coop"
-            style={{color:'var(--red)'}}>🗑</button>
+            style={{color:'var(--red)'}}>{ICON.trash}</button>
         )}
       </div>
 
@@ -1450,7 +1517,7 @@ function GoalsTab({me, goals, gps, reload, goalType, setGoalType, tasks}){
                   <span className="lbl2">→ Keep</span>
                 </button>
                 <button className="btn btn-ghost btn-sm" style={{flex:'none',width:44,padding:0}}
-                  onClick={()=>reviewDelete(g)} aria-label="Drop this goal">🗑</button>
+                  onClick={()=>reviewDelete(g)} aria-label="Drop this goal">{ICON.trash}</button>
               </div>
             </div>
           ))}
@@ -1690,7 +1757,7 @@ function RecurringEditSheet({edit, me, timeOpts, onClose, reload}){
       </select>
       {!isNew&&(
         <button className="opt" style={{marginTop:14}} onClick={()=>set('active',!f.active)}>
-          <span className="g">{f.active?'⏸️':'▶️'}</span>
+          <Ic name={f.active?'pause':'play'} className="muted"/>
           <span className="grow">{f.active?'Pause this reminder':'Resume this reminder'}</span>
         </button>
       )}
@@ -2100,14 +2167,14 @@ function SettingsSheet({me, onClose, openMembers}){
       {me.is_admin&&<>
         <div className="lbl">Team</div>
         <button className="opt" onClick={openMembers}>
-          <span className="g">👥</span><span className="grow">Members</span><span>›</span>
+          <Ic name="members" className="gold"/><span className="grow">Members</span><span>›</span>
         </button>
       </>}
 
       <div className="lbl">Account</div>
       {!pwMode?(
         <button className="opt" onClick={()=>{setPwMode(true);setErr('');setMsg('');}}>
-          <span className="g">🔑</span><span className="grow">Change password</span><span>›</span>
+          <Ic name="key" className="muted"/><span className="grow">Change password</span><span>›</span>
         </button>
       ):(
         <div>
@@ -2414,9 +2481,9 @@ function App(){
           <div className="sub">Work In One Space</div>
         </div>
         <button className="iconbtn bell" onClick={()=>setShowNotifs(true)} aria-label="Notifications">
-          🔔{unreadN>0&&<span className="belldot">{unreadN>9?'9+':unreadN}</span>}
+          {ICON.bell}{unreadN>0&&<span className="belldot">{unreadN>9?'9+':unreadN}</span>}
         </button>
-        <button className="iconbtn" onClick={()=>setShowSettings(true)} aria-label="Settings">⚙</button>
+        <button className="iconbtn" onClick={()=>setShowSettings(true)} aria-label="Settings">{ICON.gear}</button>
       </div>
 
       <div className="main">
