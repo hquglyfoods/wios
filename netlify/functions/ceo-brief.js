@@ -11,6 +11,8 @@
 // ============================================================
 const { makeSb } = require('./lib-push.js');
 const { ROLES_DOC } = require('./roles-doc.js');
+const { COACH_KB } = require('./coach-kb.js');
+const { privateCoachingNote, privateReadNote } = require('./coach-private.js');
 
 const SUPA_URL = 'https://xttqxjuunuchlxjrknyt.supabase.co';
 const ANON_KEY = 'sb_publishable_qL2xlkjIkIWGOkzaDitIJw_3iRNx9dA';
@@ -77,16 +79,31 @@ exports.handler = async (event) => {
 You report to ${me.name}, the CEO. Your job is to keep the CEO fully informed about how each C-level leader is doing, in plain, candid language. You are loyal to the CEO and tell the truth, including things a leader might not want the CEO to hear.
 The mission: become the number one donut brand and the number one Korean food brand in the United States. The company is now franchising, and each C-level leader must grow (not coast in their comfort zone) for the company to get there. The company also runs a smaller premium syrup brand, Umma's Recipe: if data mentions syrup or Umma's Recipe, understand that context. Judge leaders against that mission and their seat.
 For each leader, judge their week against the definition of THEIR seat in the role reference, and against whether the systems that seat owns are being built to work at scale. Apply this equally to every role: CEO (pipeline, capital, real estate), CBO (codified recipes, specs, store design, brand standards), COO (training, certification, audit and QA, store-leader development), CMO (grand-opening playbook, franchise lead generation, marketing fund, repeat rate), CPO (supply chain at scale, ordering platform, opening packages, sourcing). For any seat, separate real seat-level work (building systems and standards, developing people, planning) from low-level firefighting that a manager could own.
-You are given each leader's records (tasks, goals) for last week AND their private coaching notes and coaching chat. Use the coaching material to tell the CEO what the coach advised and, importantly, whether the leader appears to be acting on it or ignoring it. Cite specific real examples. Never invent tasks, dates, numbers, or quotes.
+You are given each leader's records (tasks, goals) for last week AND their private coaching notes and their full coaching conversation. This is your edge: read the coaching chats closely and tell the CEO what they reveal about each leader. From how a person talks to their coach, you can read a lot, and the CEO wants your honest read:
+- Seriousness and commitment: are they genuinely engaged and hungry, do they reply thoughtfully and act on advice, or are they dismissive, defensive, giving short low-effort replies, or ignoring the coach entirely.
+- Quality of thinking: how they reason about problems, whether they think strategically and like an owner or stay surface-level and tactical, how self-aware they are, how they handle hard feedback.
+- Work performance and drive: what the chat plus their records suggest about their actual output, follow-through, and momentum.
+Be candid and specific, and always tie each read to observed evidence from the chat or records (quote or paraphrase the specific exchange). These are inferences from limited text, so frame them as your read of the signals, not absolute fact, and flag when there is too little chat to judge. Do not invent messages, tasks, numbers, or quotes. The goal is to give the CEO a truthful, useful picture of where each leader really is, including things a leader might not say to the CEO directly.
 Never use em dashes. Use commas, periods, or parentheses instead. Keep it readable on a phone.
+CONFIDENTIAL: Some leaders have private background notes (in square brackets in their data) to help you judge them fairly and charitably. Never repeat, name, quote, diagnose, or hint at any of that background in your brief or in chat. Use it only to interpret their behavior accurately (for example, do not read a focus or memory challenge as a lack of seriousness). Report on observed work and engagement, not on any private label.
 
 FORMAT (the CEO wants to grasp it at a glance, not read a wall of text):
 - Be direct and concise. Short sentences, lead with the point, cut filler. Say the hard thing plainly.
 - Bold the few pivotal words with **double asterisks** (a key miss, a number, a verdict). Do not bold whole sentences.
 - For each leader, use a header line "## ROLE Name" (for example "## COO Jiwoon").
-- Under each, use short "- " bullets grouped by these labels on their own lines: "Did well:", "Missing:", "Coaching:" (what the coach advised and whether they are acting on it).
+- Under each, use short "- " bullets grouped by these labels on their own lines: "Did well:", "Missing:", "Coaching:" (what the coach advised and whether they are acting on it), and "Read:" (your honest read of their seriousness, thinking, and drive from the coaching chat and records, tied to specific evidence).
+- USE VISUALS to make the team state obvious. The app renders three tools:
+  1. Comparison table (markdown) to line up all leaders on the same metrics:
+     | Leader | Tasks done | Goals hit | Trend |
+     | --- | --- | --- | --- |
+     | COO | 8 | 1 | up |
+  2. Progress bar on its own line: [[bar label=COO goal completion value=40 color=warn]] (colors: me, team, good, warn).
+  3. Trend line on its own line, oldest first: [[trend label=Team tasks done values=12,15,14,20]]
+  A team overview should usually include a comparison table. Use bars for completion rates and trends for week-over-week. Keep every number real, never invented.
 - End the whole brief with a "## Watch this week" section of short "- " bullets across the team.
 Keep bullets to one or two short sentences. If the CEO asks for more depth, then expand.
+
+${COACH_KB}
 
 ROLE REFERENCE:
 ${ROLES_DOC}`;
@@ -113,8 +130,10 @@ ${ROLES_DOC}`;
         const doneLastWeek = tasks.filter((t) => t.status === 'done' && t.completed_at && t.completed_at >= sinceIso);
         const activeTasks = tasks.filter((t) => t.status === 'active');
 
-        // coaching material for this person (recent)
-        const coach = await sb(`wios_coaching_messages?user_id=eq.${p.id}&select=role,content,is_weekly,created_at&order=created_at.desc&limit=20`);
+        // coaching material for this person: the latest weekly note plus a deeper slice of the
+        // actual coaching conversation, so the assistant can read how they engage, think, and
+        // respond to hard feedback (not just whether a note exists).
+        const coach = await sb(`wios_coaching_messages?user_id=eq.${p.id}&select=role,content,is_weekly,created_at&order=created_at.desc&limit=60`);
         const coachChrono = coach.reverse();
         const latestWeekly = [...coach].reverse().find((m) => m.is_weekly);
 
@@ -122,11 +141,16 @@ ${ROLES_DOC}`;
         const activeLines = activeTasks.slice(0, 15).map((t) => `  - ${t.title}${t.urgent ? ' (urgent)' : ''}`).join('\n') || '  none';
         const goalLines = goals.slice(0, 12).map((g) => `  - [${g.period_type} ${g.period_key}] ${g.title} (${g.status})`).join('\n') || '  none';
         const coachLine = latestWeekly ? String(latestWeekly.content).slice(0, 900) : 'no coaching note yet';
-        const chatLines = coachChrono.filter((m) => !m.is_weekly).slice(-8)
-          .map((m) => `    ${m.role === 'coach' ? 'Coach' : p.role}: ${String(m.content).slice(0, 300)}`).join('\n') || '    (no coaching chat)';
+        const chatOnly = coachChrono.filter((m) => !m.is_weekly);
+        const chatLines = chatOnly.slice(-24)
+          .map((m) => `    ${m.role === 'coach' ? 'Coach' : p.role}: ${String(m.content).slice(0, 600)}`).join('\n') || '    (no coaching chat yet)';
+        const engagementNote = chatOnly.length
+          ? `  (${chatOnly.filter((m) => m.role !== 'coach').length} messages from ${(p.name || '').split(' ')[0]} in coaching chat)`
+          : `  (${(p.name || '').split(' ')[0]} has not replied to the coach in chat)`;
 
+        const priv = privateReadNote(p.role);
         sections.push(
-`### ${p.role} ${p.name}
+`### ${p.role} ${p.name}${priv ? `\n[${priv}]` : ''}
 Tasks completed last week:
 ${doneLines}
 Currently active tasks:
@@ -135,7 +159,8 @@ Goals:
 ${goalLines}
 Latest coaching note to them:
   ${coachLine}
-Recent coaching conversation (to see if they are engaging with the advice):
+Their coaching conversation (read this closely to judge how they engage, think, and respond to hard feedback):
+${engagementNote}
 ${chatLines}`);
       }
 
@@ -152,7 +177,7 @@ ${chatLines}`);
       if (!existing.length) {
         const { block } = await teamBlock();
         const prompt =
-`Write the CEO's Monday brief for last week using the exact section format from your instructions: a "## ROLE Name" header per leader (CEO, CBO, CMO, COO, CPO as present), then "- " bullets under "Did well:", "Missing:", and "Coaching:" (what the coach advised and whether they are acting on it, call out if they are ignoring it). Finish with a "## Watch this week" section of short bullets across the team.
+`Write the CEO's Monday brief for last week using the exact section format from your instructions: a "## ROLE Name" header per leader (CEO, CBO, CMO, COO, CPO as present), then "- " bullets under "Did well:", "Missing:", "Coaching:" (what the coach advised and whether they are acting on it, call out if they are ignoring it), and "Read:" (your honest read of their seriousness, quality of thinking, and drive based on their coaching conversation and records, tied to specific observed evidence, framed as your read of the signals). Finish with a "## Watch this week" section of short bullets across the team.
 Be candid and specific with real examples. Do not invent anything. Talk straight to the CEO.
 
 ${block}`;
