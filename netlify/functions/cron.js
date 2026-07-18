@@ -183,7 +183,7 @@ exports.handler = async () => {
             method: 'POST',
             body: JSON.stringify({
               owner_id: u.id,
-              title: 'Set your goals for the year, month, and week',
+              title: 'Set your yearly, semester, monthly, and weekly goals',
               status: 'active', urgent: true,
               is_system: true, system_kind: 'goal_prompt', system_ref: `all:${keys.week}`,
             }),
@@ -197,17 +197,22 @@ exports.handler = async () => {
         report.goalPrompts++;
         continue;
       }
+      const fresh = [];
       for (const type of ['week', 'month', 'semester', 'year']) {
         const key = keys[type];
         const existing = await sb(`wios_goal_periods?user_id=eq.${u.id}&period_type=eq.${type}&period_key=eq.${encodeURIComponent(key)}&select=user_id`);
         if (existing.length) continue;
-        // new period for this user: record it, create urgent prompt task, push
         await sb('wios_goal_periods', {
           method: 'POST',
           headers: { 'Prefer': 'resolution=ignore-duplicates' },
           body: JSON.stringify({ user_id: u.id, period_type: type, period_key: key, prompted: true }),
         });
-        const sysRef = `${type}:${key}`;
+        fresh.push(type);
+      }
+      if (!fresh.length) continue;
+      if (fresh.length === 1) {
+        const type = fresh[0];
+        const sysRef = `${type}:${keys[type]}`;
         try {
           await sb('wios_tasks', {
             method: 'POST',
@@ -223,6 +228,25 @@ exports.handler = async () => {
         }
         await pushToUsers([u.id], {
           title: `${PERIOD_LABEL[type]} goals`, body: 'Time to review last period and set new goals.', tag: 'wios-goal', url: '/',
+        }, env);
+        report.goalPrompts++;
+      } else {
+        // several periods rolled over at once (e.g. Jan 1): ONE combined task + one push
+        try {
+          await sb('wios_tasks', {
+            method: 'POST',
+            body: JSON.stringify({
+              owner_id: u.id,
+              title: 'Set your yearly, semester, monthly, and weekly goals',
+              status: 'active', urgent: true,
+              is_system: true, system_kind: 'goal_prompt', system_ref: `all:${keys.week}`,
+            }),
+          });
+        } catch (e) {
+          // unique index guard: prompt already exists, fine
+        }
+        await pushToUsers([u.id], {
+          title: 'New goals', body: 'A new period started. Review last period and set your goals.', tag: 'wios-goal', url: '/',
         }, env);
         report.goalPrompts++;
       }

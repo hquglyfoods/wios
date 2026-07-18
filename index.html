@@ -4716,6 +4716,13 @@ function App(){
     return s;
   },[me&&me.is_admin]);
 
+  // Current periods that still have no goal: shown as a badge on the Goals tab.
+  const goalGaps=useMemo(()=>{
+    if(!me) return 0;
+    return PERIOD_TYPES.filter(t=>!goals.some(g=>g.owner_id===me.id
+      &&g.period_type===t&&g.period_key===periodKey(t)&&g.status!=='deleted')).length;
+  },[goals,me]);
+
   // Offer to turn on notifications once, then never nag again. On a first run this
   // waits until the welcome slides and tour are finished, so it never covers them.
   const maybeOfferPush=useCallback((delay)=>{
@@ -4854,11 +4861,27 @@ function App(){
             .then(()=>{added=true;},()=>{});
         }
       }
+      if(!firstTime){
+        // migration + flood guard: several active per-period prompts collapse into one
+        const prompts=(tRes.data||[]).filter(x=>x.is_system&&x.system_kind==='goal_prompt'&&x.status==='active');
+        const perPeriod=prompts.filter(x=>String(x.system_ref||'').indexOf('all:')!==0);
+        const hasCombined=prompts.some(x=>String(x.system_ref||'').indexOf('all:')===0);
+        if(perPeriod.length>1){
+          for(const t of perPeriod){ await sb.from('wios_tasks').delete().eq('id',t.id); }
+          if(!hasCombined){
+            await sb.from('wios_tasks').insert({owner_id:user.id,
+              title:'Set your yearly, semester, monthly, and weekly goals',
+              status:'active',urgent:true,is_system:true,system_kind:'goal_prompt',
+              system_ref:`all:${periodKey('week')}`}).then(()=>{},()=>{});
+          }
+          added=true;
+        }
+      }
       if(firstTime){
         const ref=`all:${periodKey('week')}`;
         if(!(tRes.data||[]).some(x=>x.system_ref===ref)){
           await sb.from('wios_tasks').insert({owner_id:user.id,
-            title:'Set your goals for the year, month, and week',
+            title:'Set your yearly, semester, monthly, and weekly goals',
             status:'active',urgent:true,is_system:true,system_kind:'goal_prompt',system_ref:ref})
             .then(()=>{added=true;},()=>{});
         }
@@ -4939,7 +4962,7 @@ function App(){
 
   const tabs=[
     {k:'tasks', l:'Tasks', badge:coopBadge+remindedN},
-    {k:'goals', l:'Goals', badge:0},
+    {k:'goals', l:'Goals', badge:goalGaps},
     {k:'daily', l:'Recurring', badge:0},
     {k:'ask',   l:'Ask',   badge:0},
   ];
