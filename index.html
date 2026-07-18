@@ -536,6 +536,7 @@ body.kb-open .askwrap{bottom:calc(var(--kb, 0px) + env(safe-area-inset-bottom) +
 .wizdot.done{background:var(--gold-soft);}
 .wizstep{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);text-align:center;}
 .wizq{font-size:17px;font-weight:600;text-align:center;margin:8px 0 16px;line-height:1.4;color:var(--text);}
+.wizhint{font-size:12.5px;color:var(--muted);text-align:center;margin:-8px 0 14px;line-height:1.5;}
 
 .cmprow{display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--border);}
 .cmprow:active{background:var(--panel2);}
@@ -623,9 +624,9 @@ body.kb-open .askwrap{bottom:calc(var(--kb, 0px) + env(safe-area-inset-bottom) +
 /* ── First-run interactive tour ─────────────────────────── */
 body.tour-open{overflow:hidden;}
 .tour-catch{position:fixed;inset:0;z-index:80;}
-.tour-dim{position:fixed;inset:0;z-index:81;background:rgba(20,26,34,.58);pointer-events:none;}
+.tour-dim{position:fixed;inset:0;z-index:81;background:rgba(20,26,34,.34);pointer-events:none;}
 .tour-hole{position:fixed;z-index:81;pointer-events:none;
-  box-shadow:0 0 0 200vmax rgba(20,26,34,.58);
+  box-shadow:0 0 0 200vmax rgba(20,26,34,.34);
   transition:top .32s cubic-bezier(.22,.61,.36,1),left .32s cubic-bezier(.22,.61,.36,1),
     width .32s cubic-bezier(.22,.61,.36,1),height .32s cubic-bezier(.22,.61,.36,1),border-radius .32s;}
 .tour-ring{position:fixed;z-index:82;pointer-events:none;border:2px solid var(--gold);border-radius:12px;
@@ -1805,7 +1806,7 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
               <div style={{height:14}}/>
 
               {sel.is_system&&sel.system_kind==='goal_prompt'&&sel.system_ref&&(
-                <button className="opt" onClick={()=>{ const tp=sel.system_ref.split(':')[0]; setSel(null); gotoGoals(tp); }}>
+                <button className="opt" onClick={()=>{ setSel(null); gotoGoals('overview'); }}>
                   <Ic name="goals" className="gold"/><span className="grow">Open Goals</span>
                 </button>
               )}
@@ -2633,6 +2634,16 @@ function GoalWizard({me, reload, startFrom='year', initialParentId=null, onDismi
   const [prevTitle,setPrevTitle]=useState('');
   const [busy,setBusy]=useState(false);
   const t=steps[i];
+  const anyAdded=useRef(false);
+  async function closeCombinedPrompt(){
+    // the one "Set your goals for the year, month, and week" starter task
+    if(!anyAdded.current) return;
+    try{
+      await sb.from('wios_tasks').update({status:'done',completed_at:nowIso(),urgent:false})
+        .eq('owner_id',me.id).eq('system_kind','goal_prompt').eq('status','active')
+        .like('system_ref','all:%');
+    }catch(e){}
+  }
   const prompt={
     year:'What is your goal for this year?',
     semester:prevTitle?`What will you do this half of the year to reach "${prevTitle}"?`:'What is your goal for this half of the year?',
@@ -2649,6 +2660,7 @@ function GoalWizard({me, reload, startFrom='year', initialParentId=null, onDismi
       }).select().single();
       if(error) throw error;
       setAdded(a=>[...a,{id:data.id,title}]);
+      anyAdded.current=true;
       if(firstChildParent===null) setFirstChildParent(data.id);   // first goal of this step
       setText('');
     }catch(e){ alert(e.message||'Could not save.'); }
@@ -2658,7 +2670,7 @@ function GoalWizard({me, reload, startFrom='year', initialParentId=null, onDismi
     // commit any text still in the box, then move on
     if(text.trim()){ await addOne(); }
     if(added.length===0 && !text.trim()){ return; }   // nothing added yet
-    if(i>=steps.length-1){ onDismiss&&onDismiss(); reload(); return; }
+    if(i>=steps.length-1){ await closeCombinedPrompt(); onDismiss&&onDismiss(); reload(); return; }
     // the next period links under the first goal added here
     setParentId(firstChildParent);
     setPrevTitle(added[0]?added[0].title:text.trim());
@@ -2666,7 +2678,9 @@ function GoalWizard({me, reload, startFrom='year', initialParentId=null, onDismi
   }
   async function skip(){
     if(text.trim()) await addOne();
-    if(busy) return; onDismiss&&onDismiss(); reload();
+    if(busy) return;
+    await closeCombinedPrompt();
+    onDismiss&&onDismiss(); reload();
   }
   const canAdvance = added.length>0 || text.trim().length>0;
   return (
@@ -2678,6 +2692,7 @@ function GoalWizard({me, reload, startFrom='year', initialParentId=null, onDismi
       </div>
       <div className="wizstep">{PLABEL[t]} goal</div>
       <div className="wizq">{prompt[t]}</div>
+      {t==='year'&&<div className="wizhint">This year means by December 31, {periodKey('year')}. The end of this calendar year, not one year from today.</div>}
       {added.map(g=>(
         <div key={g.id} className="wizadded"><span className="wizcheck">{ICON.check}</span>{g.title}</div>
       ))}
@@ -2859,6 +2874,8 @@ function GoalsTab({me, goals, gps, reload, goalType, setGoalType, tasks}){
     const ref=`${type}:${key}`;
     const t=tasks.find(x=>x.system_ref===ref&&x.status==='active');
     if(t) await sb.from('wios_tasks').update({status:'done',completed_at:nowIso(),urgent:false}).eq('id',t.id);
+    const combined=tasks.find(x=>x.status==='active'&&x.system_kind==='goal_prompt'&&String(x.system_ref||'').indexOf('all:')===0);
+    if(combined) await sb.from('wios_tasks').update({status:'done',completed_at:nowIso(),urgent:false}).eq('id',combined.id);
   }
   async function addGoal(){
     const title=text.trim(); if(!title) return;
@@ -2988,7 +3005,7 @@ function GoalsTab({me, goals, gps, reload, goalType, setGoalType, tasks}){
         </div>
       )}
 
-      <div className="sect">This {PWORD[type]}, {periodLabel(type,key)}</div>
+      <div className="sect">This {PWORD[type]}, {periodLabel(type,key)}{type==='year'?' (until December 31)':''}</div>
       <div className="qadd" style={{marginBottom:12}}>
         <input placeholder={`Add a ${PWORD[type]} goal...`} value={text}
           onChange={e=>setText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addGoal()}/>
@@ -4638,10 +4655,12 @@ function App(){
     setShowGuide(false);
     let tourSeen=false; try{ tourSeen=!!localStorage.getItem('wios-tour-seen'); }catch(e){}
     if(guideThenTour&&!tourSeen){ setGuideThenTour(false); setShowTour(true); }
+    else maybeOfferPush(700);
   }
   function endTour(){
     try{localStorage.setItem('wios-tour-seen','1');}catch(e){}
     setShowTour(false); setTab('tasks'); window.scrollTo(0,0);
+    maybeOfferPush(700);
   }
 
   // Tour steps: each explains one tool (what, how, when). Tab-screen steps switch
@@ -4697,18 +4716,24 @@ function App(){
     return s;
   },[me&&me.is_admin]);
 
-  // First run only: offer to turn on notifications once, then never nag again.
-  useEffect(()=>{
+  // Offer to turn on notifications once, then never nag again. On a first run this
+  // waits until the welcome slides and tour are finished, so it never covers them.
+  const maybeOfferPush=useCallback((delay)=>{
     try{
       if(localStorage.getItem('wios-push-asked')) return;
       const canPush = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
       const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
       if(canPush && standalone && Notification.permission==='default'){
-        const t=setTimeout(()=>setPushPrompt(true), 1200);
-        return ()=>clearTimeout(t);
+        setTimeout(()=>setPushPrompt(true), delay);
       }
     }catch(e){}
   },[]);
+  useEffect(()=>{
+    let firstRun=false;
+    try{ firstRun=!localStorage.getItem('wios-tour-seen'); }catch(e){}
+    if(firstRun) return;   // offered by endTour / closeGuide once the tutorial is done
+    maybeOfferPush(1200);
+  },[maybeOfferPush]);
   async function acceptPush(){
     try{
       localStorage.setItem('wios-push-asked','1');
@@ -4806,20 +4831,34 @@ function App(){
     setRoleProjects(rpRes.data||[]); setRoleMembers(rmRes.data||[]); setRoleItems(riRes.data||[]);
     setBusy(false);
 
-    // safety net so goal prompts exist even before the first cron run
+    // safety net so goal prompts exist even before the first cron run.
+    // A brand-new member (no period rows yet) gets ONE combined prompt task
+    // instead of four separate ones, so their first list is not flooded.
     if(!ensured.current){
       ensured.current=true;
+      const have=gpRes.data||[];
+      const firstTime=have.length===0;
       let added=false;
       for(const type of PERIOD_TYPES){
         const key=periodKey(type);
-        if((gpRes.data||[]).some(x=>x.period_type===type&&x.period_key===key)) continue;
+        if(have.some(x=>x.period_type===type&&x.period_key===key)) continue;
         await sb.from('wios_goal_periods').upsert(
           {user_id:user.id,period_type:type,period_key:key,prompted:true},
           {onConflict:'user_id,period_type,period_key',ignoreDuplicates:true});
+        if(firstTime) continue;   // one combined task below covers all periods
         const ref=`${type}:${key}`;
         if(!(tRes.data||[]).some(x=>x.system_ref===ref)){
           await sb.from('wios_tasks').insert({owner_id:user.id,
             title:`Review last period and set your ${PLABEL[type]} goals`,
+            status:'active',urgent:true,is_system:true,system_kind:'goal_prompt',system_ref:ref})
+            .then(()=>{added=true;},()=>{});
+        }
+      }
+      if(firstTime){
+        const ref=`all:${periodKey('week')}`;
+        if(!(tRes.data||[]).some(x=>x.system_ref===ref)){
+          await sb.from('wios_tasks').insert({owner_id:user.id,
+            title:'Set your goals for the year, month, and week',
             status:'active',urgent:true,is_system:true,system_kind:'goal_prompt',system_ref:ref})
             .then(()=>{added=true;},()=>{});
         }

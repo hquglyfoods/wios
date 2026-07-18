@@ -167,6 +167,36 @@ exports.handler = async () => {
     const keys = periodKeys(et);
     const users = await sb('wios_profiles?active=eq.true&select=id,name');
     for (const u of users) {
+      // A brand-new member (no period rows at all yet) gets ONE combined prompt
+      // task instead of four separate ones, so their first list is not flooded.
+      const anyRows = await sb(`wios_goal_periods?user_id=eq.${u.id}&select=user_id&limit=1`);
+      if (!anyRows.length) {
+        for (const type of ['week', 'month', 'semester', 'year']) {
+          await sb('wios_goal_periods', {
+            method: 'POST',
+            headers: { 'Prefer': 'resolution=ignore-duplicates' },
+            body: JSON.stringify({ user_id: u.id, period_type: type, period_key: keys[type], prompted: true }),
+          });
+        }
+        try {
+          await sb('wios_tasks', {
+            method: 'POST',
+            body: JSON.stringify({
+              owner_id: u.id,
+              title: 'Set your goals for the year, month, and week',
+              status: 'active', urgent: true,
+              is_system: true, system_kind: 'goal_prompt', system_ref: `all:${keys.week}`,
+            }),
+          });
+        } catch (e) {
+          // unique index guard: prompt already exists, fine
+        }
+        await pushToUsers([u.id], {
+          title: 'Welcome to WIOS', body: 'Start by setting your goals for the year, month, and week.', tag: 'wios-goal', url: '/',
+        }, env);
+        report.goalPrompts++;
+        continue;
+      }
       for (const type of ['week', 'month', 'semester', 'year']) {
         const key = keys[type];
         const existing = await sb(`wios_goal_periods?user_id=eq.${u.id}&period_type=eq.${type}&period_key=eq.${encodeURIComponent(key)}&select=user_id`);

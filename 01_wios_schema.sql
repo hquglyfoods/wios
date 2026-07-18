@@ -444,10 +444,23 @@ create policy wios_gp_update on public.wios_goal_periods
 -- requests: creator + targets can read; recipient updates own target row
 alter table public.wios_requests enable row level security;
 alter table public.wios_request_targets enable row level security;
+-- security definer helpers break the requests <-> targets policy loop
+create or replace function public.wios_is_request_target(rid uuid)
+returns boolean language sql stable security definer set search_path = public as
+$$ select exists (select 1 from public.wios_request_targets t
+                  where t.request_id = rid and t.user_id = auth.uid()); $$;
+create or replace function public.wios_is_request_creator(rid uuid)
+returns boolean language sql stable security definer set search_path = public as
+$$ select exists (select 1 from public.wios_requests r
+                  where r.id = rid and r.creator_id = auth.uid()); $$;
+revoke all on function public.wios_is_request_target(uuid) from public;
+revoke all on function public.wios_is_request_creator(uuid) from public;
+grant execute on function public.wios_is_request_target(uuid) to authenticated;
+grant execute on function public.wios_is_request_creator(uuid) to authenticated;
 drop policy if exists wios_requests_select on public.wios_requests;
 create policy wios_requests_select on public.wios_requests for select using (
   creator_id = auth.uid() or public.wios_is_admin()
-  or exists (select 1 from public.wios_request_targets t where t.request_id = id and t.user_id = auth.uid()));
+  or public.wios_is_request_target(id));
 drop policy if exists wios_requests_insert on public.wios_requests;
 create policy wios_requests_insert on public.wios_requests for insert with check (creator_id = auth.uid());
 drop policy if exists wios_requests_update on public.wios_requests;
@@ -457,17 +470,16 @@ create policy wios_requests_delete on public.wios_requests for delete using (cre
 drop policy if exists wios_req_targets_select on public.wios_request_targets;
 create policy wios_req_targets_select on public.wios_request_targets for select using (
   user_id = auth.uid() or public.wios_is_admin()
-  or exists (select 1 from public.wios_requests r where r.id = request_id and r.creator_id = auth.uid()));
+  or public.wios_is_request_creator(request_id));
 drop policy if exists wios_req_targets_insert on public.wios_request_targets;
 create policy wios_req_targets_insert on public.wios_request_targets for insert with check (
-  exists (select 1 from public.wios_requests r where r.id = request_id and r.creator_id = auth.uid()));
+  public.wios_is_request_creator(request_id));
 drop policy if exists wios_req_targets_update on public.wios_request_targets;
 create policy wios_req_targets_update on public.wios_request_targets for update using (
-  user_id = auth.uid()
-  or exists (select 1 from public.wios_requests r where r.id = request_id and r.creator_id = auth.uid()));
+  user_id = auth.uid() or public.wios_is_request_creator(request_id));
 drop policy if exists wios_req_targets_delete on public.wios_request_targets;
 create policy wios_req_targets_delete on public.wios_request_targets for delete using (
-  exists (select 1 from public.wios_requests r where r.id = request_id and r.creator_id = auth.uid()));
+  public.wios_is_request_creator(request_id));
 
 -- role projects: any member or the creator can see and act; items are open so anyone
 -- in the project can add to another person's role (that person then approves).
