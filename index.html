@@ -29,7 +29,7 @@ if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').c
   --bg:#ECEEF1;--panel:#FFFFFF;--panel2:#E4E7EC;--border:#DCDFE4;--border2:#C6CBD3;
   --text:#202428;--muted:#6C737B;--muted2:#9BA2AA;
   --gold:#3A6EA5;--gold-soft:rgba(58,110,165,.11);--gold-line:rgba(58,110,165,.40);
-  --red:#D65C4E;--green:#2E9E68;--blue:#3A6EA5;--purple:#6E62A0;
+  --red:#D65C4E;--green:#2E9E68;--blue:#3A6EA5;--purple:#6E62A0;--teal:#2E8F97;
   --amber:#B0863E;--amber-soft:rgba(176,134,62,.13);--amber-line:rgba(176,134,62,.38);
   --card-shadow:0 1px 3px rgba(30,35,40,.08),0 1px 2px rgba(30,35,40,.04);
   --tap:44px;--kb:0px;
@@ -464,6 +464,18 @@ body.kb-open .askwrap{bottom:calc(var(--kb, 0px) + env(safe-area-inset-bottom) +
 .ab-role:active{background:#EFE5D2;}
 .ab-request{background:#EFEDF3;color:#6E62A0;box-shadow:inset 0 0 0 1.5px #DBD6E6;}
 .ab-request:active{background:#E6E2EF;}
+.ab-survey{background:#E4F1F1;color:#2E8F97;box-shadow:inset 0 0 0 1.5px #CBE4E4;}
+.ab-survey:active{background:#D7EBEB;}
+/* survey answer option */
+.svopt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:11px 12px;margin-top:7px;
+  border-radius:11px;background:var(--panel2);color:var(--text);font-size:14px;font-weight:600;
+  box-shadow:inset 0 0 0 1px var(--border);}
+.svopt .svdot{flex:none;width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--border2);}
+.svopt.on{background:rgba(58,110,165,.08);box-shadow:inset 0 0 0 1.5px var(--gold);}
+.svopt.on .svdot{background:var(--gold);box-shadow:inset 0 0 0 2px var(--gold);}
+.svq{font-weight:700;font-size:14px;margin-top:16px;}
+.svbar{height:7px;border-radius:3.5px;background:var(--border);overflow:hidden;margin-top:4px;}
+.svbar>div{height:100%;background:var(--gold);border-radius:3.5px;}
 
 /* coop card inside tasks */
 .coopcard .coopmark{flex:none;width:26px;height:26px;display:flex;align-items:center;justify-content:center;color:var(--gold);}
@@ -571,6 +583,9 @@ body.kb-open .askwrap{bottom:calc(var(--kb, 0px) + env(safe-area-inset-bottom) +
 .addrow4{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
 .addrow4 .addbtn{font-size:12.5px;gap:5px;padding:12px 4px;flex-direction:column;}
 .addrow4 .addbtn svg{width:18px;height:18px;}
+.addrow5{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
+.addrow5 .addbtn{font-size:11.5px;gap:4px;padding:11px 2px;flex-direction:column;}
+.addrow5 .addbtn svg{width:17px;height:17px;}
 .rolecard .coopmark{color:var(--gold);}
 .roletabs{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .roletab{flex:1;min-width:64px;display:flex;align-items:center;justify-content:center;gap:5px;
@@ -716,6 +731,7 @@ const ICON = {
   grip:  <svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>,
   roles: <svg viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5h7"/></svg>,
   request: <svg viewBox="0 0 24 24"><path d="M8 11V5.5a1.5 1.5 0 0 1 3 0V10"/><path d="M11 10V4.5a1.5 1.5 0 0 1 3 0V10"/><path d="M14 10V6.5a1.5 1.5 0 0 1 3 0V13c0 3.5-2 6-5.5 6S6 16.5 6 13v-1.5a1.5 1.5 0 0 1 2-1.4"/></svg>,
+  survey: <svg viewBox="0 0 24 24"><rect x="4.5" y="4.5" width="15" height="16.5" rx="2.5"/><path d="M9 4.5v-2h6v2"/><path d="M8 10.5l1.4 1.4 2.3-2.6"/><path d="M13.8 10.8h2.8"/><path d="M8 15.7l1.4 1.4 2.3-2.6"/><path d="M13.8 16h2.8"/></svg>,
   coach: <svg viewBox="0 0 24 24"><circle cx="9" cy="6.5" r="2.8"/><path d="M4 20v-1.5A4.5 4.5 0 0 1 8.5 14H9"/><path d="M14 14l2.2 2.2L21 11"/><path d="M14.5 8.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6z"/></svg>,
   x: <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>,
   brief: <svg viewBox="0 0 24 24"><path d="M7.5 10c-.9-.3-1.3-1.2-1.3-2.4C6.2 5 8.6 3 12 3s5.8 2 5.8 4.6c0 1.2-.4 2.1-1.3 2.4"/><circle cx="12" cy="9" r="3.4"/><path d="M7.8 9.2C6.9 11 6.5 13 7.5 14.5M16.2 9.2c.9 1.8 1.3 3.8.3 5.3"/><path d="M6 21v-1.2A4.8 4.8 0 0 1 10.8 15h2.4A4.8 4.8 0 0 1 18 19.8V21"/></svg>,
@@ -943,7 +959,7 @@ function Login(){
 }
 
 /* ── tasks ───────────────────────────────────────────────── */
-function TasksTab({me, people, tasks, coops, members, goals, requests, reqTargets, roleProjects, roleMembers, roleItems, reload, openCoopId, setOpenCoopId, gotoGoals}){
+function TasksTab({me, people, tasks, coops, members, goals, requests, reqTargets, surveys, svTargets, roleProjects, roleMembers, roleItems, reload, openCoopId, setOpenCoopId, gotoGoals}){
   const [seg,setSeg]=useState('active');
   const [slideDir,setSlideDir]=useState(0);   // -1 slide from left, 1 from right, for the swipe feel
   const [quick,setQuick]=useState('');
@@ -1025,6 +1041,25 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
     return {incoming,todo,sent,done};
   },[requests,reqTargets,me.id,hiddenIds]);
   const reqTargetsOf=id=>reqTargets.filter(t=>t.request_id===id);
+
+  const [showNewSurvey,setShowNewSurvey]=useState(false);
+  const [openSurveyId,setOpenSurveyId]=useState(null);
+  const svTargetsOf=id=>svTargets.filter(t=>t.survey_id===id);
+  // Surveys: incoming (asked me, not answered yet), sent (I created, still open), done.
+  const svGroups=useMemo(()=>{
+    const incoming=[], sent=[], done=[];
+    (surveys||[]).forEach(sv=>{
+      if(hiddenIds.has(sv.id)) return;
+      const myT=svTargets.find(t=>t.survey_id===sv.id&&t.user_id===me.id);
+      if(sv.creator_id===me.id){ (sv.status==='done'?done:sent).push(sv); }
+      else if(myT){
+        if(sv.status==='done'){ if(myT.status==='answered') done.push(sv); }
+        else if(myT.status==='pending') incoming.push(sv);
+        // answered && still open: waiting on the others, hidden from my Active
+      }
+    });
+    return {incoming,sent,done};
+  },[surveys,svTargets,me.id,hiddenIds]);
 
   // ── Role projects ──
   const [showNewRole,setShowNewRole]=useState(false);
@@ -1406,6 +1441,44 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
     setBusy(false);
   }
 
+  // ── survey actions ──
+  async function submitSurveyAnswers(sv, answers){
+    if(busy) return; setBusy(true);
+    try{
+      await sb.from('wios_survey_targets').update({status:'answered',answers,answered_at:nowIso()})
+        .eq('survey_id',sv.id).eq('user_id',me.id);
+      notifyUsers([sv.creator_id], `${cLabel(me.id)} answered your survey`, sv.title, null);
+      const targets=svTargets.filter(t=>t.survey_id===sv.id&&t.user_id!==me.id);
+      if(targets.every(t=>t.status==='answered'))
+        notifyUsers([sv.creator_id], `Everyone answered: ${sv.title}`, 'Ready for you to review and close', null);
+      setOpenSurveyId(null);
+      reload();
+    }catch(e){ alert(e.message||'Could not submit.'); }
+    setBusy(false);
+  }
+  async function closeSurvey(sv){
+    if(busy) return;
+    if(!confirm('Close this survey? Answers are kept and it moves to Done.')) return;
+    setBusy(true);
+    try{
+      await sb.from('wios_surveys').update({status:'done',closed_at:nowIso()}).eq('id',sv.id);
+      reload();
+    }catch(e){ alert(e.message||'Could not close.'); }
+    setBusy(false);
+  }
+  async function deleteSurvey(sv){
+    if(busy) return;
+    if(!confirm('Delete this survey and its answers for everyone?')) return;
+    setBusy(true);
+    hide(sv.id);
+    try{
+      await sb.from('wios_survey_targets').delete().eq('survey_id',sv.id);
+      await sb.from('wios_surveys').delete().eq('id',sv.id);
+      reload();
+    }catch(e){ alert(e.message||'Could not delete.'); }
+    setBusy(false);
+  }
+
   // ── role project actions ──
   async function toggleRoleItem(it){
     if(busy) return; setBusy(true);
@@ -1578,7 +1651,40 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
     );
   }
 
-  const allCount=lists.all.length+coopGroups.mine.length+coopGroups.theirs.length+reqGroups.todo.length+reqGroups.sent.length;
+  function SurveyCard({sv, incoming, sent}){
+    const targets=svTargetsOf(sv.id);
+    const doneN=targets.filter(t=>t.status==='answered').length;
+    return (
+      <div className="card reqcard" onClick={()=>setOpenSurveyId(sv.id)}>
+        <div className="row">
+          <span className="coopmark" aria-label="Survey">{ICON.survey}</span>
+          <div className="grow">
+            <div className="tt">{sv.title}</div>
+            <div className="meta">
+              {sv.urgent&&sv.status!=='done'&&<span className="chip urgent">Urgent</span>}
+              <span className="chip sub">{(sv.questions||[]).length} question{(sv.questions||[]).length===1?'':'s'}</span>
+              {sent?<span className="chip sub">{doneN}/{targets.length} answered</span>
+                : <span>from {cLabel(sv.creator_id)}</span>}
+              {sv.status==='done'&&<span className="chip ok">Closed</span>}
+            </div>
+          </div>
+          {sent&&sv.creator_id===me.id&&(
+            <button className="trash" onClick={e=>{e.stopPropagation();deleteSurvey(sv);}} aria-label="Delete survey">{ICON.trash}</button>
+          )}
+        </div>
+        {incoming&&(
+          <button className="btn btn-gold btn-sm" style={{width:'100%',marginTop:12}} disabled={busy}
+            onClick={e=>{e.stopPropagation();setOpenSurveyId(sv.id);}}>Answer</button>
+        )}
+        {sent&&sv.status!=='done'&&targets.length>0&&targets.every(t=>t.status==='answered')&&(
+          <button className="btn btn-gold btn-sm" style={{width:'100%',marginTop:10}} disabled={busy}
+            onClick={e=>{e.stopPropagation();closeSurvey(sv);}}>Everyone answered, close it</button>
+        )}
+      </div>
+    );
+  }
+
+  const allCount=lists.all.length+coopGroups.mine.length+coopGroups.theirs.length+reqGroups.todo.length+reqGroups.sent.length+svGroups.sent.length;
   const segItems=[
     {k:'all',l:`All (7d)${allCount?` ${allCount}`:''}`, w:1.5},
     {k:'active',l:`Active${(lists.active.length+coopGroups.mine.length+reqGroups.todo.length)?` ${lists.active.length+coopGroups.mine.length+reqGroups.todo.length}`:''}`, w:1.2},
@@ -1659,7 +1765,7 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
         </button>
       )}
 
-      <div className="addrow addrow4">
+      <div className="addrow addrow5">
         <button data-tour="add-task" className="btn addbtn ab-task" onClick={()=>{ setNewTaskTitle(''); setShowNewTask(true); }}>
           {ICON.tasks}<span>Task</span>
         </button>
@@ -1672,6 +1778,9 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
         <button data-tour="add-request" className="btn addbtn ab-request" onClick={()=>setShowNewRequest(true)}>
           {ICON.request}<span>Request</span>
         </button>
+        <button data-tour="add-survey" className="btn addbtn ab-survey" onClick={()=>setShowNewSurvey(true)}>
+          {ICON.survey}<span>Survey</span>
+        </button>
       </div>
 
       <div data-tour="seg"><Seg items={segItems} value={seg} onChange={v=>changeSeg(v)}/></div>
@@ -1679,9 +1788,10 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
       <div className="swipearea" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
       <div key={seg} ref={slideRef} className={'slidewrap '+(slideDir>0?'fromR':slideDir<0?'fromL':'')}>
 
-      {(seg==='active'||seg==='all')&&(coopGroups.req.length>0||reqGroups.incoming.length>0)&&(
+      {(seg==='active'||seg==='all')&&(coopGroups.req.length>0||reqGroups.incoming.length>0||svGroups.incoming.length>0)&&(
         <>
-          <div className="sect">Requests <span className="n">{coopGroups.req.length+reqGroups.incoming.length}</span></div>
+          <div className="sect">Requests <span className="n">{coopGroups.req.length+reqGroups.incoming.length+svGroups.incoming.length}</span></div>
+          {svGroups.incoming.map(sv=><SurveyCard key={sv.id} sv={sv} incoming/>)}
           {reqGroups.incoming.map(r=><RequestCard key={r.id} r={r} incoming/>)}
           {coopGroups.req.map(c=><CoopCard key={c.id} c={c} request/>)}
         </>
@@ -1690,18 +1800,20 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
       {(seg==='active'||seg==='all')&&coopGroups.mine.map(c=><CoopCard key={c.id} c={c}/>)}
       {(seg==='active'||seg==='all')&&reqGroups.todo.map(r=><RequestCard key={r.id} r={r}/>)}
       {(seg==='active'||seg==='all')&&reqGroups.sent.map(r=><RequestCard key={r.id} r={r} sent/>)}
+      {(seg==='active'||seg==='all')&&svGroups.sent.map(sv=><SurveyCard key={sv.id} sv={sv} sent/>)}
       {(seg==='active'||seg==='all')&&roleGroups.active.map(p=><RoleCard key={p.id} p={p}/>)}
       {(seg==='waiting'||seg==='all')&&coopGroups.theirs.map(c=><CoopCard key={c.id} c={c}/>)}
       {(seg==='waiting'||seg==='all')&&roleGroups.waiting.map(p=><RoleCard key={p.id} p={p}/>)}
       {seg==='done'&&coopGroups.closed.map(c=><CoopCard key={c.id} c={c}/>)}
       {seg==='done'&&reqGroups.done.map(r=><RequestCard key={r.id} r={r} sent={r.creator_id===me.id}/>)}
+      {seg==='done'&&svGroups.done.map(sv=><SurveyCard key={sv.id} sv={sv} sent={sv.creator_id===me.id}/>)}
       {seg==='done'&&roleGroups.done.map(p=><RoleCard key={p.id} p={p}/>)}
 
       {lists[seg].length===0&&coopGroups.mine.length===0&&coopGroups.theirs.length===0&&
        coopGroups.closed.length===0&&coopGroups.req.length===0&&
-       !((seg==='active'||seg==='all')&&(reqGroups.incoming.length||reqGroups.todo.length||reqGroups.sent.length||roleGroups.active.length))&&
+       !((seg==='active'||seg==='all')&&(reqGroups.incoming.length||reqGroups.todo.length||reqGroups.sent.length||roleGroups.active.length||svGroups.incoming.length||svGroups.sent.length))&&
        !((seg==='waiting'||seg==='all')&&roleGroups.waiting.length)&&
-       !(seg==='done'&&(reqGroups.done.length||roleGroups.done.length))&&(
+       !(seg==='done'&&(reqGroups.done.length||roleGroups.done.length||svGroups.done.length))&&(
         <div className="empty">
           {seg==='all'&&'Nothing on your plate. Tap Task, Coop, or Request to add one.'}
           {seg==='active'&&'Nothing here yet. Tap Task, Coop, or Request to add one.'}
@@ -1989,6 +2101,18 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
         <NewRequestSheet me={me} people={people} onClose={()=>setShowNewRequest(false)} reload={reload}/>
       )}
 
+      {showNewSurvey&&(
+        <NewSurveySheet me={me} people={people} onClose={()=>setShowNewSurvey(false)} reload={reload}/>
+      )}
+      {openSurveyId&&(()=>{
+        const sv=(surveys||[]).find(x=>x.id===openSurveyId);
+        if(!sv) return null;
+        return <SurveyDetail me={me} people={people} sv={sv} targets={svTargetsOf(sv.id)}
+          onClose={()=>setOpenSurveyId(null)}
+          onSubmit={ans=>submitSurveyAnswers(sv,ans)}
+          onCloseSurvey={()=>{closeSurvey(sv);setOpenSurveyId(null);}}
+          onDelete={()=>{deleteSurvey(sv);setOpenSurveyId(null);}} busy={busy}/>;
+      })()}
       {openReqId&&(()=>{
         const r=(requests||[]).find(x=>x.id===openReqId);
         if(!r){ return null; }
@@ -2181,6 +2305,172 @@ function RequestDetail({me, people, r, targets, onClose, onAccept, onDecline, on
           <button className="btn btn-gold" style={{width:'100%',marginTop:14}} disabled={busy} onClick={onClose2}>
             {allDone?'Everyone is done, close it':`Close it now (${doneN}/${active.length} done)`}
           </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function NewSurveySheet({me, people, onClose, reload}){
+  const [title,setTitle]=useState('');
+  // each question: {text, options:[string]}. 1-4 options per question.
+  const [qs,setQs]=useState([{text:'',options:['','']}]);
+  const [to,setTo]=useState([]); const [urgent,setUrgent]=useState(false);
+  const [busy,setBusy]=useState(false);
+  const label=id=>{ const p=people.find(x=>x.id===id); return p?`${p.role} ${first(p.name)}`:'someone'; };
+  const toggle=id=>setTo(a=>a.includes(id)?a.filter(x=>x!==id):[...a,id]);
+  const setQ=(i,patch)=>setQs(a=>a.map((q,j)=>j===i?{...q,...patch}:q));
+  const setOpt=(i,k,v)=>setQs(a=>a.map((q,j)=>j===i?{...q,options:q.options.map((o,m)=>m===k?v:o)}:q));
+  const addOpt=i=>setQs(a=>a.map((q,j)=>j===i&&q.options.length<4?{...q,options:[...q.options,'']}:q));
+  const delOpt=(i,k)=>setQs(a=>a.map((q,j)=>j===i&&q.options.length>1?{...q,options:q.options.filter((_,m)=>m!==k)}:q));
+  const addQ=()=>setQs(a=>[...a,{text:'',options:['','']}]);
+  const delQ=i=>setQs(a=>a.length>1?a.filter((_,j)=>j!==i):a);
+  const clean=qs.map(q=>({text:q.text.trim(),options:q.options.map(o=>o.trim()).filter(Boolean)}));
+  const valid=title.trim()&&to.length>0&&clean.length>0&&clean.every(q=>q.text&&q.options.length>=1&&q.options.length<=4);
+  async function create(){
+    if(!valid||busy) return;
+    setBusy(true);
+    try{
+      const questions=clean.map((q,i)=>({id:'q'+(i+1), text:q.text, options:q.options}));
+      const {data:sv,error}=await sb.from('wios_surveys').insert({
+        creator_id:me.id, title:title.trim(), questions, urgent, status:'open'
+      }).select().single();
+      if(error) throw error;
+      const rows=to.map(uid=>({survey_id:sv.id, user_id:uid, status:'pending'}));
+      await sb.from('wios_survey_targets').insert(rows);
+      notifyUsers(to, `${label(me.id)} sent you a survey`, title.trim(), null);
+      onClose(); reload();
+    }catch(e){ alert(e.message||'Could not send.'); }
+    setBusy(false);
+  }
+  const LETTERS='ABCD';
+  return (
+    <Sheet onClose={onClose}>
+      <h3>New survey</h3>
+      <div className="sub">Ask one or more questions, each with up to 4 answer options. Each person picks one option per question, and you see the results.</div>
+      <input placeholder="Survey title" value={title} onChange={e=>setTitle(e.target.value)}/>
+      {qs.map((q,i)=>(
+        <div key={i} style={{marginTop:12,padding:'10px 10px 12px',borderRadius:12,background:'var(--panel2)',boxShadow:'inset 0 0 0 1px var(--border)'}}>
+          <div className="row" style={{gap:8}}>
+            <div className="lbl grow" style={{margin:0}}>Question {i+1}</div>
+            {qs.length>1&&<button className="trash" onClick={()=>delQ(i)} aria-label="Remove question">{ICON.trash}</button>}
+          </div>
+          <input placeholder="Type the question" value={q.text} onChange={e=>setQ(i,{text:e.target.value})}/>
+          {q.options.map((o,k)=>(
+            <div key={k} className="row" style={{gap:8,marginTop:7}}>
+              <span style={{flex:'none',width:20,fontWeight:700,color:'var(--muted)',fontSize:13,textAlign:'center'}}>{LETTERS[k]}</span>
+              <input className="grow" style={{marginTop:0}} placeholder={'Option '+LETTERS[k]} value={o} onChange={e=>setOpt(i,k,e.target.value)}/>
+              {q.options.length>1&&<button className="trash" onClick={()=>delOpt(i,k)} aria-label="Remove option">{ICON.x}</button>}
+            </div>
+          ))}
+          {q.options.length<4&&(
+            <button className="btn btn-line btn-sm" style={{marginTop:9}} onClick={()=>addOpt(i)}>+ Add option</button>
+          )}
+        </div>
+      ))}
+      <button className="btn btn-line" style={{width:'100%',marginTop:10}} onClick={addQ}>+ Add another question</button>
+      <div className="lbl">Send to {to.length>0&&<span style={{color:'var(--gold)'}}>{to.length} selected</span>}</div>
+      <PersonGrid people={people} value={to} onChange={toggle} exclude={me.id} multi/>
+      <button className={'opt'+(urgent?' on':'')} style={{marginTop:10}} onClick={()=>setUrgent(!urgent)}>
+        <Ic name={urgent?'starFill':'star'} className="gold"/>
+        <span className="grow">{urgent?'Urgent':'Mark urgent'}</span>
+      </button>
+      <div style={{height:6}}/>
+      <button className="btn btn-gold" style={{width:'100%'}} disabled={!valid||busy} onClick={create}>
+        {busy?'Sending...':`Send survey${to.length>1?` to ${to.length}`:''}`}
+      </button>
+    </Sheet>
+  );
+}
+
+function SurveyDetail({me, people, sv, targets, onClose, onSubmit, onCloseSurvey, onDelete, busy}){
+  const label=id=>{ const p=people.find(x=>x.id===id); return p?`${p.role} ${first(p.name)}`:'someone'; };
+  const iSent=sv.creator_id===me.id;
+  const myT=targets.find(t=>t.user_id===me.id);
+  const answering=!iSent&&myT&&myT.status==='pending'&&sv.status!=='done';
+  const qs=sv.questions||[];
+  const [picks,setPicks]=useState({});
+  const doneN=targets.filter(t=>t.status==='answered').length;
+  const allPicked=qs.length>0&&qs.every(q=>picks[q.id]!==undefined);
+  const LETTERS='ABCD';
+  return (
+    <div className="detail">
+      <div className="dhdr">
+        <button className="iconbtn" onClick={onClose} aria-label="Back">{ICON.back}</button>
+        <div className="grow">
+          <div className="tt">{sv.title}</div>
+          <div className="meta">
+            <span className="coopmark" aria-label="Survey" style={{width:16,height:16}}>{ICON.survey}</span>
+            <span>Survey from {label(sv.creator_id)}</span>
+            {sv.status==='done'&&<span className="chip ok">Closed</span>}
+          </div>
+        </div>
+        {iSent&&(
+          <button className="iconbtn" onClick={onDelete} disabled={busy} aria-label="Delete survey" style={{color:'var(--red)'}}>{ICON.trash}</button>
+        )}
+      </div>
+
+      <div className="dbody">
+        {answering ? (
+          <>
+            {qs.map((q,qi)=>(
+              <div key={q.id}>
+                <div className="svq">{qi+1}. {q.text}</div>
+                {q.options.map((o,oi)=>(
+                  <button key={oi} className={'svopt'+(picks[q.id]===oi?' on':'')}
+                    onClick={()=>setPicks(p=>({...p,[q.id]:oi}))}>
+                    <span className="svdot"/>
+                    <span className="grow">{LETTERS[oi]}. {o}</span>
+                  </button>
+                ))}
+              </div>
+            ))}
+            <button className="btn btn-gold" style={{width:'100%',marginTop:16}} disabled={!allPicked||busy}
+              onClick={()=>onSubmit(picks)}>
+              {busy?'Sending...':'Submit answers'}
+            </button>
+            {!allPicked&&<div className="note" style={{marginTop:8}}>Pick one option for every question.</div>}
+          </>
+        ) : (
+          <>
+            <div className="lbl">Answers <span style={{color:'var(--gold)'}}>{doneN}/{targets.length} answered</span></div>
+            {targets.map(t=>(
+              <div key={t.user_id} className="reqrow">
+                <span className="grow">{label(t.user_id)}</span>
+                <span className={'chip '+(t.status==='answered'?'ok':'wait')}>{t.status==='answered'?'Answered':'Waiting'}</span>
+              </div>
+            ))}
+            {qs.map((q,qi)=>{
+              const answered=targets.filter(t=>t.status==='answered'&&t.answers);
+              return (
+                <div key={q.id}>
+                  <div className="svq">{qi+1}. {q.text}</div>
+                  {q.options.map((o,oi)=>{
+                    const who=answered.filter(t=>t.answers[q.id]===oi);
+                    const pct=answered.length?Math.round(who.length/answered.length*100):0;
+                    return (
+                      <div key={oi} style={{marginTop:9}}>
+                        <div className="row" style={{gap:8}}>
+                          <span className="grow" style={{fontSize:13.5}}>{LETTERS[oi]}. {o}</span>
+                          <span style={{fontSize:12.5,color:'var(--muted)',fontWeight:700}}>{who.length}</span>
+                        </div>
+                        <div className="svbar"><div style={{width:pct+'%'}}/></div>
+                        {who.length>0&&<div style={{fontSize:12,color:'var(--muted2)',marginTop:3}}>{who.map(t=>first((people.find(p=>p.id===t.user_id)||{}).name)).join(', ')}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+            {!iSent&&myT&&myT.status==='answered'&&sv.status!=='done'&&(
+              <div className="note" style={{marginTop:14}}>You answered. Waiting on the others.</div>
+            )}
+            {iSent&&sv.status!=='done'&&(
+              <button className="btn btn-gold" style={{width:'100%',marginTop:16}} disabled={busy} onClick={onCloseSurvey}>
+                {doneN===targets.length?'Everyone answered, close it':`Close it now (${doneN}/${targets.length} answered)`}
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -4488,6 +4778,27 @@ function TourArt({kind}){
       <Label x={150} y={82} c="var(--muted2)">one ask, each person does it and checks it off</Label>
     </svg>
   );
+  if(kind==='survey')return(
+    <svg width="300" height="86" viewBox="0 0 300 86">
+      <rect x={18} y={8} width={110} height={62} rx={10} fill="var(--panel)" stroke="var(--border2)"/>
+      <rect x={28} y={17} width={70} height={6} rx={3} fill="var(--border2)"/>
+      {[0,1,2].map(i=>(
+        <g key={i}>
+          <circle cx={34} cy={35+i*13} r={4.5} fill={i===1?'var(--gold)':'none'} stroke={i===1?'var(--gold)':'var(--border2)'} strokeWidth="1.8"
+            className={i===1?'ta-pulse':undefined}/>
+          <rect x={44} y={32+i*13} width={i===1?58:44} height={5} rx={2.5} fill="var(--border)"/>
+          <Label x={34} y={38.5+i*13} c={i===1?'#fff':'var(--muted2)'} w={700}>{'ABC'[i]}</Label>
+        </g>
+      ))}
+      <Arrow x1={140} x2={176} y={38}/>
+      <Person x={200} y={22} c="var(--blue)"/><Person x={200} y={56} c="var(--blue)"/>
+      <Check x={224} y={16} delay=".4s"/><Check x={224} y={50} delay="1s"/>
+      <g stroke="var(--border2)" strokeWidth="1.5" fill="none"><path d="M 244 20 L 262 20 M 244 54 L 262 54"/></g>
+      <rect x={264} y={14} width={10} height={12} rx={2} fill="var(--gold)" opacity="0.85"/>
+      <rect x={264} y={48} width={10} height={12} rx={2} fill="var(--teal)" opacity="0.85"/>
+      <Label x={150} y={82} c="var(--muted2)">everyone picks an answer, you see the results</Label>
+    </svg>
+  );
   if(kind==='waiting')return(
     <svg width="300" height="86" viewBox="0 0 300 86">
       <rect x={8} y={22} width={78} height={32} rx={8} fill="var(--panel)" stroke="var(--border2)"/>
@@ -4624,6 +4935,7 @@ function App(){
   const [allPeople,setAllPeople]=useState([]); // incl. deactivated, for the Members sheet
   const [tasks,setTasks]=useState([]); const [coops,setCoops]=useState([]); const [members,setMembers]=useState([]);
   const [requests,setRequests]=useState([]); const [reqTargets,setReqTargets]=useState([]);
+  const [surveys,setSurveys]=useState([]); const [svTargets,setSvTargets]=useState([]);
   const [roleProjects,setRoleProjects]=useState([]); const [roleMembers,setRoleMembers]=useState([]); const [roleItems,setRoleItems]=useState([]);
   const [goals,setGoals]=useState([]); const [gps,setGps]=useState([]); const [recs,setRecs]=useState([]);
   const [tab,setTab]=useState('tasks');
@@ -4688,6 +5000,9 @@ function App(){
       {tab:'tasks', target:'add-request', icon:'request', title:'Request', art:'request',
        body:'Need something from a teammate? Send a request. It lands on their list, they accept it and do it, and you watch it get done. You close it when everyone is finished.',
        when:'You need one thing from someone.'},
+      {tab:'tasks', target:'add-survey', icon:'survey', title:'Survey', art:'survey',
+       body:'Ask the team questions with answer choices, like A, B or C. Each person picks their answers, and you see who chose what. Great for quick check-ins and team votes.',
+       when:'You want everyone\u2019s answer to the same questions.'},
       {tab:'tasks', target:'seg', icon:'tasks', title:'Your lists',
        body:'Active is what is on you right now. Waiting is parked with someone else. Later is hiding until its day. Done keeps what you finished. All (7d) shows your whole week in one look.'},
       {tab:'goals', target:'main', ring:'tab-goals', cardPos:'bottom', icon:'goals', title:'Goals',
@@ -4809,7 +5124,7 @@ function App(){
     const {data:{user}}=await sb.auth.getUser();
     if(!user) return;
     setBusy(true);
-    const [pRes,tRes,cRes,mRes,gRes,gpRes,rRes,nRes,reqRes,rtRes,rpRes,rmRes,riRes]=await Promise.all([
+    const [pRes,tRes,cRes,mRes,gRes,gpRes,rRes,nRes,reqRes,rtRes,rpRes,rmRes,riRes,svRes,svtRes]=await Promise.all([
       sb.from('wios_profiles').select('*').order('created_at'),
       sb.from('wios_tasks').select('*').eq('owner_id',user.id),
       sb.from('wios_coops').select('*').order('created_at',{ascending:false}),
@@ -4823,6 +5138,8 @@ function App(){
       sb.from('wios_role_projects').select('*').order('created_at',{ascending:false}),
       sb.from('wios_role_members').select('*'),
       sb.from('wios_role_items').select('*'),
+      sb.from('wios_surveys').select('*').order('created_at',{ascending:false}),
+      sb.from('wios_survey_targets').select('*'),
     ]);
     const all=pRes.data||[];
     const mine=all.find(p=>p.id===user.id);
@@ -4835,6 +5152,7 @@ function App(){
     setGoals(gRes.data||[]); setGps(gpRes.data||[]); setRecs(rRes.data||[]);
     setNotifs(nRes.data||[]);
     setRequests(reqRes.data||[]); setReqTargets(rtRes.data||[]);
+    setSurveys(svRes.data||[]); setSvTargets(svtRes.data||[]);
     setRoleProjects(rpRes.data||[]); setRoleMembers(rmRes.data||[]); setRoleItems(riRes.data||[]);
     setBusy(false);
 
@@ -4932,8 +5250,10 @@ function App(){
   const reqIncomingN=useMemo(()=>me?reqTargets.filter(t=>t.user_id===me.id&&t.status==='pending').length
     +reqTargets.filter(t=>t.user_id===me.id&&t.status==='accepted').length:0,[reqTargets,me]);
   const roleIncomingN=useMemo(()=>me?roleItems.filter(it=>it.assignee_id===me.id&&!it.approved).length:0,[roleItems,me]);
+  const svIncomingN=useMemo(()=>me?svTargets.filter(t=>t.user_id===me.id&&t.status==='pending'
+    &&surveys.some(sv=>sv.id===t.survey_id&&sv.status!=='done')).length:0,[svTargets,surveys,me]);
   const remindedN=useMemo(()=>tasks.filter(t=>t.status==='active'&&t.reminded).length,[tasks]);
-  const coopBadge=myTurn+coopReqN+reqIncomingN+roleIncomingN;
+  const coopBadge=myTurn+coopReqN+reqIncomingN+roleIncomingN+svIncomingN;
 
   useEffect(()=>{
     const n=coopBadge+remindedN;
@@ -4987,6 +5307,7 @@ function App(){
         {tab==='tasks'&&<TasksTab me={me} people={people} tasks={tasks}
           coops={coops} members={members} goals={goals}
           requests={requests} reqTargets={reqTargets}
+          surveys={surveys} svTargets={svTargets}
           roleProjects={roleProjects} roleMembers={roleMembers} roleItems={roleItems}
           reload={load} openCoopId={openCoopId} setOpenCoopId={setOpenCoopId}
           gotoGoals={tp=>{ setGoalType(tp); setTab('goals'); }}/>}
