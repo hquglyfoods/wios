@@ -93,6 +93,32 @@ body.kb-open .tabbar{transform:translateX(-50%) translateY(200%);pointer-events:
 
 /* segmented control */
 .seg{display:flex;background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:3px;margin-bottom:12px;}
+/* All (7d) gets its own look so the week overview stands apart from plain lists */
+.seg button.segall{color:var(--gold);font-weight:800;background:rgba(234,191,112,.10);
+  border-radius:9px;margin-right:3px;box-shadow:inset 0 0 0 1px rgba(234,191,112,.35);}
+.seg button.segall.on{background:var(--gold);color:#fff;box-shadow:none;}
+.segrow{display:flex;gap:8px;align-items:stretch;}
+.segrow .seg{flex:1;margin-bottom:12px;}
+.calbtn{width:44px;margin-bottom:12px;display:flex;align-items:center;justify-content:center;
+  background:var(--panel2);border:1px solid var(--border);border-radius:12px;color:var(--muted);}
+.calbtn.on{background:var(--gold);border-color:var(--gold);color:#fff;}
+.calbtn svg{width:19px;height:19px;}
+/* month calendar */
+.calhead{display:flex;align-items:center;justify-content:space-between;margin:2px 0 10px;}
+.calhead .mt{font-size:15px;font-weight:800;}
+.calnav{width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+  background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:16px;font-weight:800;}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:12px;}
+.calwd{text-align:center;font-size:9.5px;font-weight:700;color:var(--muted2);text-transform:uppercase;padding-bottom:2px;}
+.calcell{aspect-ratio:1/1.05;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  background:var(--panel2);border:1px solid var(--border);border-radius:9px;min-width:0;}
+.calcell.blank{background:transparent;border-color:transparent;}
+.calcell .dn{font-size:13px;font-weight:700;color:var(--text);}
+.calcell .ct{font-size:9.5px;font-weight:800;color:var(--gold);min-height:12px;line-height:1;}
+.calcell .ct.hot{color:var(--red);}
+.calcell.today .dn{color:var(--gold);}
+.calcell.today{box-shadow:inset 0 0 0 1px var(--gold);}
+.calcell.on{background:rgba(234,191,112,.16);border-color:var(--gold);}
 /* All (7d) week view */
 .wkhead{display:flex;align-items:center;justify-content:space-between;margin:2px 0 8px;}
 .wkcap{font-size:12px;font-weight:700;color:var(--muted);}
@@ -711,7 +737,7 @@ const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 // Build marker: bump on every deploy. The app checks the live index.html for a
 // newer marker whenever it returns to the foreground and reloads itself, so a
 // PWA resumed from the app switcher can never keep running stale code.
-const APP_BUILD='wb-20260718-4';
+const APP_BUILD='wb-20260718-6';
 
 const PERIOD_TYPES = ['week','month','semester','year'];
 const PLABEL = {week:'Weekly',month:'Monthly',semester:'Semester',year:'Yearly'};
@@ -746,6 +772,7 @@ const ICON = {
   back:  <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>,
   undo:  <svg viewBox="0 0 24 24"><path d="M9 7L4 12l5 5"/><path d="M4 12h11a5 5 0 0 1 0 10h-1"/></svg>,
   note:  <svg viewBox="0 0 24 24"><path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="M14 7l3 3"/></svg>,
+  calendar: <svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>,
   grip:  <svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>,
   roles: <svg viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5h7"/></svg>,
   request: <svg viewBox="0 0 24 24"><path d="M8 11V5.5a1.5 1.5 0 0 1 3 0V10"/><path d="M11 10V4.5a1.5 1.5 0 0 1 3 0V10"/><path d="M14 10V6.5a1.5 1.5 0 0 1 3 0V13c0 3.5-2 6-5.5 6S6 16.5 6 13v-1.5a1.5 1.5 0 0 1 2-1.4"/></svg>,
@@ -871,7 +898,7 @@ function Seg({items, value, onChange}){
   return (
     <div className="seg">
       {items.map(it=>(
-        <button key={it.k} className={value===it.k?'on':''} style={it.w?{flex:it.w}:undefined}
+        <button key={it.k} className={(value===it.k?'on ':'')+(it.cls||'')} style={it.w?{flex:it.w}:undefined}
           onClick={()=>onChange(it.k)}>{it.l}</button>
       ))}
     </div>
@@ -1009,7 +1036,6 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
   const [newTaskOtherDay,setNewTaskOtherDay]=useState(false);
   const [alarmEdit,setAlarmEdit]=useState('');   // datetime-local value when editing a task's alarm
   const [actionsOpen,setActionsOpen]=useState(false);  // task detail: expandable "Actions" menu
-  const [declining,setDeclining]=useState(null); const [declineMsg,setDeclineMsg]=useState('');
   // Optimistic removal: hide a task the instant it is deleted or marked done,
   // so the list updates even before the server round-trip / reload completes.
   const [hiddenIds,setHiddenIds]=useState(()=>new Set());
@@ -1020,27 +1046,25 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
 
   // Coops I'm part of, split by whose turn it is.
   const coopGroups=useMemo(()=>{
-    const req=[], mine=[], theirs=[], closed=[];
+    const mine=[], theirs=[], closed=[];
     (coops||[]).forEach(c=>{
       if(hiddenIds.has(c.id)) return;
       const m=members.find(x=>x.coop_id===c.id&&x.user_id===me.id);
       const involved=!!m||c.creator_id===me.id;
       if(!involved) return;
       if(c.status==='closed'){ closed.push(c); return; }
-      if(m&&m.status==='pending'){ req.push(c); return; }   // a request waiting on my answer
       if(c.holder_id===me.id){ mine.push(c); return; }      // my turn -> Active
       theirs.push(c);                                        // waiting on someone else -> Waiting
     });
-    return {req,mine,theirs,closed};
+    return {mine,theirs,closed};
   },[coops,members,me.id,hiddenIds]);
 
   const [showNewRequest,setShowNewRequest]=useState(false);
   const [openReqId,setOpenReqId]=useState(null);
-  // Requests split into: incoming (someone asked me, I have not accepted),
-  // mine-to-do (I accepted, not yet completed) -> Active,
-  // sent-by-me (I am the asker) -> tracked as a card, and done.
+  // Requests: no accept step. Anything sent to me is immediately my to-do
+  // (Active); sent-by-me is tracked as a card; done keeps the record.
   const reqGroups=useMemo(()=>{
-    const incoming=[], todo=[], sent=[], done=[];
+    const todo=[], sent=[], done=[];
     (requests||[]).forEach(r=>{
       if(hiddenIds.has(r.id)) return;
       const myT=reqTargets.find(t=>t.request_id===r.id&&t.user_id===me.id);
@@ -1050,13 +1074,12 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
       } else if(myT){
         if(r.status==='done'){
           // closed by the asker: keep a record in Done for anyone who took part
-          if(myT.status==='completed'||myT.status==='accepted') done.push(r);
-        } else if(myT.status==='pending') incoming.push(r);
-        else if(myT.status==='accepted') todo.push(r);
+          if(myT.status!=='declined') done.push(r);
+        } else if(myT.status==='pending'||myT.status==='accepted') todo.push(r);
         // myT.status==='completed' && open: waiting on others, hidden from my Active
       }
     });
-    return {incoming,todo,sent,done};
+    return {todo,sent,done};
   },[requests,reqTargets,me.id,hiddenIds]);
   const reqTargetsOf=id=>reqTargets.filter(t=>t.request_id===id);
 
@@ -1184,6 +1207,34 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
   function wkLabel(i){ const d=week.days[i].d;
     return (i===0?'Today':i===1?'Tomorrow':WKD[d.getDay()])+' \u00b7 '+(d.getMonth()+1)+'/'+d.getDate(); }
 
+  // ---- Month calendar (opened with the calendar button next to the tabs) ----
+  const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const [calOpen,setCalOpen]=useState(false);
+  const [calBase,setCalBase]=useState(()=>{ const d=new Date(); d.setDate(1); d.setHours(0,0,0,0); return d; });
+  const [calSel,setCalSel]=useState(()=>isoDate(new Date()));
+  function calShift(n){ const d=new Date(calBase); d.setMonth(d.getMonth()+n); setCalBase(d); setCalSel(null); }
+  // Same open items as the week view, but bucketed by their REAL calendar date
+  // (no folding of overdue onto today: a calendar shows facts, not a to-do inbox).
+  const calMap=useMemo(()=>{
+    const map={};
+    const put=(ts,item,hot)=>{ if(!ts) return; const k=isoDate(new Date(ts));
+      (map[k]=map[k]||{items:[],hot:0}).items.push(item); if(hot) map[k].hot++; };
+    lists.active.forEach(t=>{ if(t.due_at) put(t.due_at,{k:'task',t},dueSoon(t.due_at)); });
+    lists.waiting.forEach(t=>put(t.remind_at,{k:'task',t},false));
+    lists.scheduled.forEach(t=>put(t.scheduled_at,{k:'task',t},false));
+    [...roleGroups.active,...roleGroups.waiting].forEach(p=>put(p.due_at,{k:'role',p},dueSoon(p.due_at)));
+    return map;
+  },[lists,roleGroups]);
+  const calCells=useMemo(()=>{
+    const first=new Date(calBase); const startPad=first.getDay();
+    const dim=new Date(first.getFullYear(),first.getMonth()+1,0).getDate();
+    const cells=[]; for(let i=0;i<startPad;i++) cells.push(null);
+    for(let d=1;d<=dim;d++){ const dt=new Date(first.getFullYear(),first.getMonth(),d);
+      cells.push({d, key:isoDate(dt)}); }
+    return cells;
+  },[calBase]);
+  const todayKey=isoDate(new Date());
+
   async function addQuick(){
     const title=quick.trim(); if(!title) return;
     setQuick('');
@@ -1304,14 +1355,15 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
     if(!sendTo.length || busy) return;
     setBusy(true);
     try{
-      // Turn my task into a coop I still hold; the people I picked become pending members.
+      // Turn my task into a coop I still hold. No invite step: everyone I pick
+      // is a member immediately (they just get a push).
       const {data:coop, error}=await sb.from('wios_coops').insert({
         title:t.title, notes:t.notes, creator_id:me.id, holder_id:me.id,
         pending_id:null, last_holder_id:me.id, urgent:t.urgent
       }).select().single();
       if(error) throw error;
       const rows=[{coop_id:coop.id, user_id:me.id, status:'accepted', joined_at:nowIso()}];
-      sendTo.forEach(uid=>rows.push({coop_id:coop.id, user_id:uid, status:'pending', invited_by:me.id, invite_message:sendMsg||null}));
+      sendTo.forEach(uid=>rows.push({coop_id:coop.id, user_id:uid, status:'accepted', joined_at:nowIso(), invited_by:me.id, invite_message:sendMsg||null}));
       await sb.from('wios_coop_members').insert(rows);
       await sb.from('wios_coop_messages').insert({coop_id:coop.id, user_id:me.id, kind:'system',
         body:`${cLabel(me.id)} brought in ${sendTo.map(cLabel).join(', ')}`});
@@ -1354,42 +1406,6 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
   }
 
   // ── coop actions (merged into the tasks view) ──
-  async function acceptCoop(c){
-    if(busy) return; setBusy(true);
-    try{
-      // Accepting just means "I am in". The baton (holder) stays with whoever
-      // currently has it, so on the accepter's side it sits in Waiting until it
-      // is actually passed to them. Pending is cleared back to the last holder.
-      await sb.from('wios_coop_members').update({status:'accepted',joined_at:nowIso()})
-        .eq('coop_id',c.id).eq('user_id',me.id);
-      if(c.pending_id===me.id)
-        await sb.from('wios_coops').update({holder_id:c.last_holder_id||c.creator_id,pending_id:null}).eq('id',c.id);
-      await sb.from('wios_coop_messages').insert({coop_id:c.id,user_id:me.id,kind:'system',
-        body:`${cLabel(me.id)} joined`});
-      const others=[...new Set(members.filter(m=>m.coop_id===c.id&&m.status==='accepted')
-        .map(m=>m.user_id).concat([c.creator_id]))].filter(x=>x!==me.id);
-      notifyUsers(others, `${cLabel(me.id)} joined`, c.title, c.id);
-      await reload();
-    }catch(e){ alert(e.message||'Could not accept.'); }
-    setBusy(false);
-  }
-  async function sendDecline(){
-    const c=declining; if(!c||busy) return; setBusy(true);
-    try{
-      const msg=declineMsg.trim();
-      await sb.from('wios_coop_members').update({status:'declined'}).eq('coop_id',c.id).eq('user_id',me.id);
-      await sb.from('wios_coop_messages').insert({coop_id:c.id,user_id:me.id,kind:'system',
-        body:`${cLabel(me.id)} responded${msg?`: ${msg}`:''}`});
-      if(c.pending_id===me.id)
-        await sb.from('wios_coops').update({pending_id:null, holder_id:c.last_holder_id||c.creator_id}).eq('id',c.id);
-      const m=myM(c.id);
-      notifyUsers([(m&&m.invited_by)||c.creator_id], `${cLabel(me.id)} responded`,
-        `${c.title}${msg?`: ${msg}`:''}`, c.id);
-      setDeclining(null); setDeclineMsg('');
-      reload();
-    }catch(e){ alert(e.message||'Could not send.'); }
-    setBusy(false);
-  }
   async function deleteCoopCard(c){
     if(busy) return;
     if(!confirm('Delete this coop for everyone? This cannot be undone.')) return;
@@ -1404,12 +1420,10 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
     setBusy(false);
   }
 
-  function CoopCard({c, request}){
-    const m=myM(c.id);
+  function CoopCard({c}){
     const mineTurn=c.holder_id===me.id&&c.status==='active';
-    const fromCreator = m && (m.invited_by===c.creator_id);
     return (
-      <div className={'card coopcard'+(mineTurn?' turn':'')} onClick={()=>!request&&setOpenCoopId(c.id)}>
+      <div className={'card coopcard'+(mineTurn?' turn':'')} onClick={()=>setOpenCoopId(c.id)}>
         <div className="row">
           {mineTurn&&<span className="ball"/>}
           <span className="coopmark" aria-label="Coop">{ICON.coop}</span>
@@ -1423,48 +1437,16 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
                 : c.holder_id?<span className="chip wait">With {cLabel(c.holder_id)}</span>:null}
               <span>from {cLabel(c.creator_id)}</span>
             </div>
-            {request&&m&&m.invite_message&&(
-              <div className="note" style={{marginTop:8,fontStyle:'italic'}}>"{m.invite_message}"</div>
-            )}
           </div>
-          {!request&&(c.creator_id===me.id||me.is_admin)&&(
+          {(c.creator_id===me.id||me.is_admin)&&(
             <button className="trash" onClick={e=>{e.stopPropagation();deleteCoopCard(c);}} aria-label="Delete coop">{ICON.trash}</button>
           )}
         </div>
-        {request&&(
-          <div className="row" style={{marginTop:12,gap:8}}>
-            <button className="btn btn-gold btn-sm" style={{flex:fromCreator?'':1,width:fromCreator?'100%':'auto'}}
-              disabled={busy} onClick={e=>{e.stopPropagation();acceptCoop(c);}}>Accept</button>
-            {!fromCreator&&(
-              <button className="btn btn-line btn-sm" style={{flex:1}} disabled={busy}
-                onClick={e=>{e.stopPropagation();setDeclining(c);setDeclineMsg('');}}>Respond</button>
-            )}
-          </div>
-        )}
       </div>
     );
   }
 
   // ── request actions ──
-  async function acceptRequest(r){
-    if(busy) return; setBusy(true);
-    try{
-      await sb.from('wios_request_targets').update({status:'accepted',accepted_at:nowIso()})
-        .eq('request_id',r.id).eq('user_id',me.id);
-      reload();
-    }catch(e){ alert(e.message||'Could not accept.'); }
-    setBusy(false);
-  }
-  async function declineRequest(r){
-    if(busy) return; setBusy(true);
-    try{
-      await sb.from('wios_request_targets').update({status:'declined'})
-        .eq('request_id',r.id).eq('user_id',me.id);
-      notifyUsers([r.creator_id], `${cLabel(me.id)} declined`, r.title, null);
-      reload();
-    }catch(e){ alert(e.message||'Could not decline.'); }
-    setBusy(false);
-  }
   async function completeRequest(r){
     if(busy) return; setBusy(true);
     try{
@@ -1677,7 +1659,7 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
     );
   }
 
-  function RequestCard({r, incoming, sent}){
+  function RequestCard({r, sent}){
     const targets=reqTargetsOf(r.id);
     const active=targets.filter(t=>t.status!=='declined');
     const doneN=targets.filter(t=>t.status==='completed').length;
@@ -1693,21 +1675,12 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
               {sent?<span className="chip sub">{doneN}/{active.length} done</span>
                 : <span>from {cLabel(r.creator_id)}</span>}
               {r.status==='done'&&<span className="chip ok">Closed</span>}
-              {!sent&&myT&&myT.status==='accepted'&&<span className="chip back">Accepted</span>}
             </div>
           </div>
           {((sent&&r.creator_id===me.id)||me.is_admin)&&(
             <button className="trash" onClick={e=>{e.stopPropagation();deleteRequest(r);}} aria-label="Delete request">{ICON.trash}</button>
           )}
         </div>
-        {incoming&&(
-          <div className="row" style={{marginTop:12,gap:8}}>
-            <button className="btn btn-gold btn-sm" style={{flex:1}} disabled={busy}
-              onClick={e=>{e.stopPropagation();acceptRequest(r);}}>Accept</button>
-            <button className="btn btn-line btn-sm" style={{flex:1}} disabled={busy}
-              onClick={e=>{e.stopPropagation();declineRequest(r);}}>Decline</button>
-          </div>
-        )}
         {sent&&r.status!=='done'&&active.length>0&&active.every(t=>t.status==='completed')&&(
           <button className="btn btn-gold btn-sm" style={{width:'100%',marginTop:10}} disabled={busy}
             onClick={e=>{e.stopPropagation();closeRequest(r);}}>Everyone is done, close it</button>
@@ -1754,7 +1727,7 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
   const activeN=lists.active.length+coopGroups.mine.length+reqGroups.todo.length+svGroups.sentReady.length;
   const waitingN=lists.waiting.length+coopGroups.theirs.length+svGroups.sentWaiting.length;
   const segItems=[
-    {k:'all',l:`All (7d)${allCount?` ${allCount}`:''}`, w:1.5},
+    {k:'all',l:`All (7d)${allCount?` ${allCount}`:''}`, w:1.5, cls:'segall'},
     {k:'active',l:`Active${activeN?` ${activeN}`:''}`, w:1.2},
     {k:'waiting',l:`Waiting${waitingN?` ${waitingN}`:''}`, w:1.2},
     {k:'scheduled',l:'Later', w:0.9},
@@ -1895,17 +1868,52 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
         </button>
       </div>
 
-      <div data-tour="seg"><Seg items={segItems} value={seg} onChange={v=>changeSeg(v)}/></div>
+      <div data-tour="seg" className="segrow">
+        <Seg items={segItems} value={calOpen?'':seg} onChange={v=>{ setCalOpen(false); changeSeg(v); }}/>
+        <button className={'calbtn'+(calOpen?' on':'')} aria-label="Month calendar"
+          onClick={()=>setCalOpen(o=>!o)}>{ICON.calendar}</button>
+      </div>
 
+      {calOpen&&(
+        <div className="calwrap">
+          <div className="calhead">
+            <button className="calnav" onClick={()=>calShift(-1)} aria-label="Previous month">{'\u2039'}</button>
+            <div className="mt">{MONTHS[calBase.getMonth()]} {calBase.getFullYear()}</div>
+            <button className="calnav" onClick={()=>calShift(1)} aria-label="Next month">{'\u203a'}</button>
+          </div>
+          <div className="calgrid">
+            {WKD.map(d=><div key={d} className="calwd">{d[0]}</div>)}
+            {calCells.map((c,i)=> c===null
+              ? <div key={'b'+i} className="calcell blank"/>
+              : (
+                <button key={c.key} className={'calcell'+(calSel===c.key?' on':'')+(c.key===todayKey?' today':'')}
+                  onClick={()=>setCalSel(c.key)}>
+                  <span className="dn">{c.d}</span>
+                  <span className={'ct'+((calMap[c.key]||{}).hot?' hot':'')}>{(calMap[c.key]||{items:[]}).items.length||''}</span>
+                </button>
+              ))}
+          </div>
+          {calSel&&(()=>{ const d=new Date(calSel+'T00:00:00'); const box=calMap[calSel]||{items:[]};
+            return (
+              <>
+                <div className="sect">{(calSel===todayKey?'Today':WKD[d.getDay()])+' \u00b7 '+(d.getMonth()+1)+'/'+d.getDate()}
+                  {box.items.length>0&&<span className="n">{box.items.length}</span>}</div>
+                {box.items.length===0&&<div className="wkfree">Nothing on this day.</div>}
+                {box.items.map(it=>renderWkItem(it))}
+              </>
+            ); })()}
+          {!calSel&&<div className="wkfree">Tap a date to see that day.</div>}
+        </div>
+      )}
+
+      {!calOpen&&(<>
       <div className="swipearea" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
       <div key={seg} ref={slideRef} className={'slidewrap '+(slideDir>0?'fromR':slideDir<0?'fromL':'')}>
 
-      {(seg==='active'||seg==='all')&&(coopGroups.req.length>0||reqGroups.incoming.length>0||svGroups.incoming.length>0)&&(
+      {(seg==='active'||seg==='all')&&svGroups.incoming.length>0&&(
         <>
-          <div className="sect">Requests <span className="n">{coopGroups.req.length+reqGroups.incoming.length+svGroups.incoming.length}</span></div>
+          <div className="sect">Requests <span className="n">{svGroups.incoming.length}</span></div>
           {svGroups.incoming.map(sv=><SurveyCard key={sv.id} sv={sv} incoming/>)}
-          {reqGroups.incoming.map(r=><RequestCard key={r.id} r={r} incoming/>)}
-          {coopGroups.req.map(c=><CoopCard key={c.id} c={c} request/>)}
         </>
       )}
 
@@ -1965,8 +1973,8 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
       {seg==='done'&&roleGroups.done.map(p=><RoleCard key={p.id} p={p}/>)}
 
       {seg!=='all'&&lists[seg].length===0&&coopGroups.mine.length===0&&coopGroups.theirs.length===0&&
-       coopGroups.closed.length===0&&coopGroups.req.length===0&&
-       !((seg==='active'||seg==='all')&&(reqGroups.incoming.length||reqGroups.todo.length||reqGroups.sent.length||roleGroups.active.length||svGroups.incoming.length||svGroups.sentReady.length))&&
+       coopGroups.closed.length===0&&
+       !((seg==='active'||seg==='all')&&(reqGroups.todo.length||reqGroups.sent.length||roleGroups.active.length||svGroups.incoming.length||svGroups.sentReady.length))&&
        !((seg==='waiting'||seg==='all')&&(roleGroups.waiting.length||svGroups.sentWaiting.length))&&
        !(seg==='done'&&(reqGroups.done.length||roleGroups.done.length||svGroups.done.length))&&(
         <div className="empty">
@@ -1981,6 +1989,7 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
       {seg!=='all'&&(seg==='active'&&order ? order.map(id=>lists.active.find(t=>t.id===id)).filter(Boolean) : lists[seg]).map(t=>renderTaskCard(t))}
       </div>
       </div>
+      </>)}
 
       {sel&&(
         <Sheet onClose={()=>setSel(null)}>
@@ -2231,7 +2240,6 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
         if(!r){ return null; }
         return <RequestDetail me={me} people={people} r={r} targets={reqTargetsOf(r.id)}
           onClose={()=>setOpenReqId(null)}
-          onAccept={()=>acceptRequest(r)} onDecline={()=>declineRequest(r)}
           onComplete={()=>completeRequest(r)} onClose2={()=>{closeRequest(r);setOpenReqId(null);}}
           onDelete={()=>{deleteRequest(r);setOpenReqId(null);}} busy={busy}/>;
       })()}
@@ -2253,17 +2261,6 @@ function TasksTab({me, people, tasks, coops, members, goals, requests, reqTarget
           onDelete={()=>{deleteRole(p);setOpenRoleId(null);}}/>;
       })()}
 
-      {declining&&(
-        <Sheet onClose={()=>setDeclining(null)}>
-          <h3>Respond</h3>
-          <div className="sub">Tell them why this is not needed, or suggest another way. It goes back to whoever sent it.</div>
-          <textarea rows="3" placeholder="Your message" value={declineMsg} onChange={e=>setDeclineMsg(e.target.value)}/>
-          <div style={{height:12}}/>
-          <button className="btn btn-gold" style={{width:'100%'}} disabled={busy} onClick={sendDecline}>
-            {busy?'Sending...':'Send response'}
-          </button>
-        </Sheet>
-      )}
 
       {openCoopId&&<CoopDetail me={me} people={people}
         coop={coops.find(c=>c.id===openCoopId)} members={members.filter(m=>m.coop_id===openCoopId)}
@@ -2284,13 +2281,14 @@ function NewCoopSheet({me, people, onClose, reload}){
     setBusy(true);
     try{
       // Creator keeps the baton: the coop opens in the creator's Active.
-      // Invited teammates are pending until they join; then it waits for a pass.
+      // Teammates are in immediately (no accept step); it sits in their Waiting
+      // until the baton is passed to them.
       const {data:coop,error}=await sb.from('wios_coops').insert({
         title, creator_id:me.id, holder_id:me.id, pending_id:null, last_holder_id:me.id, urgent:nUrgent
       }).select().single();
       if(error) throw error;
       const rows=[{coop_id:coop.id,user_id:me.id,status:'accepted',joined_at:nowIso()}];
-      nTo.forEach(uid=>rows.push({coop_id:coop.id,user_id:uid,status:'pending',invited_by:me.id,invite_message:nMsg||null}));
+      nTo.forEach(uid=>rows.push({coop_id:coop.id,user_id:uid,status:'accepted',joined_at:nowIso(),invited_by:me.id,invite_message:nMsg||null}));
       await sb.from('wios_coop_members').insert(rows);
       await sb.from('wios_coop_messages').insert({coop_id:coop.id,user_id:me.id,kind:'system',
         body:`${label(me.id)} started this with ${nTo.map(label).join(', ')}`});
@@ -2333,7 +2331,8 @@ function NewRequestSheet({me, people, onClose, reload}){
         creator_id:me.id, title:t, message:msg||null, urgent, status:'open'
       }).select().single();
       if(error) throw error;
-      const rows=to.map(uid=>({request_id:req.id, user_id:uid, status:'pending'}));
+      // No accept step: the request lands straight in each person's Active.
+      const rows=to.map(uid=>({request_id:req.id, user_id:uid, status:'accepted', accepted_at:nowIso()}));
       await sb.from('wios_request_targets').insert(rows);
       notifyUsers(to, `${label(me.id)} asked you`, t, null);
       onClose(); reload();
@@ -2343,7 +2342,7 @@ function NewRequestSheet({me, people, onClose, reload}){
   return (
     <Sheet onClose={onClose}>
       <h3>New request</h3>
-      <div className="sub">Ask one or more people to do something. Each person accepts, does it, then marks it done. You get a push as each one finishes.</div>
+      <div className="sub">Ask one or more people to do something. It lands straight in their list; each person does it and marks it done. You get a push as each one finishes.</div>
       <input placeholder="What are you asking for?" value={title} onChange={e=>setTitle(e.target.value)}/>
       <textarea rows="2" placeholder="Details (optional)" value={msg} onChange={e=>setMsg(e.target.value)}/>
       <div className="lbl">Ask who {to.length>0&&<span style={{color:'var(--gold)'}}>{to.length} selected</span>}</div>
@@ -2360,15 +2359,15 @@ function NewRequestSheet({me, people, onClose, reload}){
   );
 }
 
-function RequestDetail({me, people, r, targets, onClose, onAccept, onDecline, onComplete, onClose2, onDelete, busy}){
+function RequestDetail({me, people, r, targets, onClose, onComplete, onClose2, onDelete, busy}){
   const label=id=>{ const p=people.find(x=>x.id===id); return p?`${p.role} ${first(p.name)}`:'someone'; };
   const iSent=r.creator_id===me.id;
   const myT=targets.find(t=>t.user_id===me.id);
   const active=targets.filter(t=>t.status!=='declined');
   const doneN=targets.filter(t=>t.status==='completed').length;
   const allDone=active.length>0&&active.every(t=>t.status==='completed');
-  const stTxt=s=>s==='completed'?'Done':s==='accepted'?'Accepted':s==='declined'?'Declined':'Waiting';
-  const stCls=s=>s==='completed'?'ok':s==='accepted'?'back':s==='declined'?'off':'wait';
+  const stTxt=s=>s==='completed'?'Done':s==='declined'?'Declined':'To do';
+  const stCls=s=>s==='completed'?'ok':s==='declined'?'off':'wait';
   return (
     <div className="detail">
       <div className="dhdr">
@@ -2397,14 +2396,8 @@ function RequestDetail({me, people, r, targets, onClose, onAccept, onDecline, on
           </div>
         ))}
 
-        {/* recipient actions */}
-        {!iSent&&myT&&myT.status==='pending'&&(
-          <div className="row" style={{gap:8,marginTop:14}}>
-            <button className="btn btn-gold" style={{flex:1}} disabled={busy} onClick={onAccept}>Accept</button>
-            <button className="btn btn-line" style={{flex:1}} disabled={busy} onClick={onDecline}>Decline</button>
-          </div>
-        )}
-        {!iSent&&myT&&myT.status==='accepted'&&(
+        {/* recipient actions: no accept step, straight to completion */}
+        {!iSent&&myT&&(myT.status==='pending'||myT.status==='accepted')&&r.status!=='done'&&(
           <button className="btn btn-gold" style={{width:'100%',marginTop:14}} disabled={busy} onClick={onComplete}>
             Mark completed
           </button>
@@ -2847,22 +2840,18 @@ function CoopDetail({me, people, coop, members, onClose, reload}){
       const remindAt = passRemind>0 ? new Date(Date.now()+passRemind*3600000).toISOString() : null;
       await sb.from('wios_coop_messages').insert({coop_id:coop.id,user_id:me.id,kind:'pass',
         pass_to:passTo,body:msg||null});
-      if(target&&target.status==='accepted'){
-        await sb.from('wios_coops').update({holder_id:passTo,pending_id:null,last_holder_id:me.id,
-          remind_at:remindAt,reminded:false}).eq('id',coop.id);
-        notifyUsers([passTo], `Your turn: ${coop.title}`, msg||`Passed by ${label(me.id)}`, coop.id);
-      }else{
-        if(!target){
-          await sb.from('wios_coop_members').insert({coop_id:coop.id,user_id:passTo,status:'pending',
-            invited_by:me.id,invite_message:msg||null});
-        }else{
-          await sb.from('wios_coop_members').update({status:'pending',invited_by:me.id,invite_message:msg||null})
-            .eq('coop_id',coop.id).eq('user_id',passTo);
-        }
-        await sb.from('wios_coops').update({holder_id:null,pending_id:passTo,last_holder_id:me.id,
-          remind_at:remindAt,reminded:false}).eq('id',coop.id);
-        notifyUsers([passTo], `Task request from ${label(me.id)}`, coop.title, coop.id);
+      // No accept step: whoever receives the pass is a member immediately and
+      // the baton lands in their hands right away.
+      if(!target){
+        await sb.from('wios_coop_members').insert({coop_id:coop.id,user_id:passTo,status:'accepted',
+          joined_at:nowIso(),invited_by:me.id,invite_message:msg||null});
+      }else if(target.status!=='accepted'){
+        await sb.from('wios_coop_members').update({status:'accepted',joined_at:nowIso()})
+          .eq('coop_id',coop.id).eq('user_id',passTo);
       }
+      await sb.from('wios_coops').update({holder_id:passTo,pending_id:null,last_holder_id:me.id,
+        remind_at:remindAt,reminded:false}).eq('id',coop.id);
+      notifyUsers([passTo], `Your turn: ${coop.title}`, msg||`Passed by ${label(me.id)}`, coop.id);
       setPassing(false); setPassTo(null); setPassMsg(''); setPassRemind(0);
       await reload(); loadMsgs();
     }catch(e){ alert(e.message||'Could not pass this on.'); }
@@ -2871,20 +2860,20 @@ function CoopDetail({me, people, coop, members, onClose, reload}){
   async function addMembers(){
     if(!addPick.length||busy) return; setBusy(true);
     try{
-      // some of the picked people may have an old row (e.g. declined earlier). Upsert by
-      // inserting the ones with no row and re-inviting the ones that already have one.
+      // No accept step: picked people are members immediately. People with an
+      // old row (e.g. declined long ago) are simply switched back on.
       for(const uid of addPick){
         const existing=members.find(m=>m.user_id===uid);
         if(existing){
-          await sb.from('wios_coop_members').update({status:'pending',invited_by:me.id,invite_message:addMsg||null})
-            .eq('coop_id',coop.id).eq('user_id',uid);
+          await sb.from('wios_coop_members').update({status:'accepted',joined_at:nowIso(),
+            invited_by:me.id,invite_message:addMsg||null}).eq('coop_id',coop.id).eq('user_id',uid);
         }else{
-          await sb.from('wios_coop_members').insert({coop_id:coop.id,user_id:uid,status:'pending',
-            invited_by:me.id,invite_message:addMsg||null});
+          await sb.from('wios_coop_members').insert({coop_id:coop.id,user_id:uid,status:'accepted',
+            joined_at:nowIso(),invited_by:me.id,invite_message:addMsg||null});
         }
       }
       await sb.from('wios_coop_messages').insert({coop_id:coop.id,user_id:me.id,kind:'system',
-        body:`${label(me.id)} invited ${addPick.map(label).join(', ')}`});
+        body:`${label(me.id)} brought in ${addPick.map(label).join(', ')}`});
       notifyUsers(addPick, `Added to a coop: ${coop.title}`, addMsg||`by ${label(me.id)}`, coop.id);
       setAdding(false); setAddPick([]); setAddMsg('');
       await reload(); loadMsgs();
@@ -3022,7 +3011,7 @@ function CoopDetail({me, people, coop, members, onClose, reload}){
       {adding&&(
         <Sheet onClose={()=>{setAdding(false);setAddPick([]);setAddMsg('');}}>
           <h3>Add to this coop</h3>
-          <div className="sub">Bring more people in. They get an invite and join once they accept.</div>
+          <div className="sub">Bring more people in. They are on the coop right away and just get a push.</div>
           <PersonGrid people={people.filter(p=>!roster.includes(p.id))} value={addPick}
             onChange={id=>setAddPick(a=>a.includes(id)?a.filter(x=>x!==id):[...a,id])}
             exclude={me.id} multi/>
@@ -5378,15 +5367,13 @@ function App(){
   function markBriefSeen(){ try{localStorage.setItem('wios-brief-seen',new Date().toISOString());}catch(e){} setBriefNew(false); }
 
   const myTurn=useMemo(()=>me?coops.filter(c=>c.status==='active'&&c.holder_id===me.id).length:0,[coops,me]);
-  const coopReqN=useMemo(()=>me?coops.filter(c=>c.status==='active'&&
-    members.some(m=>m.coop_id===c.id&&m.user_id===me.id&&m.status==='pending')).length:0,[coops,members,me]);
-  const reqIncomingN=useMemo(()=>me?reqTargets.filter(t=>t.user_id===me.id&&t.status==='pending').length
-    +reqTargets.filter(t=>t.user_id===me.id&&t.status==='accepted').length:0,[reqTargets,me]);
+  const reqIncomingN=useMemo(()=>me?reqTargets.filter(t=>t.user_id===me.id&&
+    (t.status==='pending'||t.status==='accepted')).length:0,[reqTargets,me]);
   const roleIncomingN=useMemo(()=>me?roleItems.filter(it=>it.assignee_id===me.id&&!it.approved).length:0,[roleItems,me]);
   const svIncomingN=useMemo(()=>me?svTargets.filter(t=>t.user_id===me.id&&t.status==='pending'
     &&surveys.some(sv=>sv.id===t.survey_id&&sv.status!=='done')).length:0,[svTargets,surveys,me]);
   const remindedN=useMemo(()=>tasks.filter(t=>t.status==='active'&&t.reminded).length,[tasks]);
-  const coopBadge=myTurn+coopReqN+reqIncomingN+roleIncomingN+svIncomingN;
+  const coopBadge=myTurn+reqIncomingN+roleIncomingN+svIncomingN;
 
   useEffect(()=>{
     const n=coopBadge+remindedN;
