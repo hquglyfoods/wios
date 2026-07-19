@@ -140,6 +140,24 @@ body.kb-open .tabbar{transform:translateX(-50%) translateY(200%);pointer-events:
 .rdot{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);
   width:4px;height:4px;border-radius:50%;background:var(--teal);}
 .wkcell.on .rdot,.calcell.on .rdot{background:var(--gold);}
+/* startup diagnostics panel (admins only) */
+.perfpanel{position:fixed;left:8px;right:8px;bottom:calc(64px + env(safe-area-inset-bottom,0px));
+  z-index:60;background:rgba(32,36,40,.93);color:#E8EAED;border-radius:12px;
+  box-shadow:0 4px 16px rgba(0,0,0,.25);font-size:11.5px;backdrop-filter:blur(4px);}
+.perfbar{display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;}
+.pp-title{font-weight:800;}
+.pp-hint{color:#9BA2AA;flex:1;text-align:right;font-size:10.5px;}
+.pp-x{color:#9BA2AA;font-size:15px;line-height:1;padding:2px 6px;background:none;border:none;}
+.perfrows{padding:2px 10px 9px;max-height:45vh;overflow:auto;}
+.perfrow{display:flex;justify-content:space-between;gap:10px;padding:2.5px 0;
+  border-top:1px solid rgba(255,255,255,.06);}
+.perfrow .pn{color:#C9CDD2;}
+.perfrow .pv{font-weight:700;font-variant-numeric:tabular-nums;}
+.perfrow .pv.warn{color:#E6B35A;}
+.perfrow .pv.bad{color:#F08A7E;}
+.pp-copy{width:100%;margin-top:8px;padding:8px 0;border-radius:8px;border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.08);color:#E8EAED;font-size:11.5px;font-weight:700;}
+.pp-note{color:#9BA2AA;font-size:10px;padding-top:7px;line-height:1.4;}
 
 .seg button{flex:1;min-width:0;padding:10px 2px;border-radius:9px;color:var(--muted);font-size:11.5px;
   font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:40px;}
@@ -746,7 +764,30 @@ const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 // Build marker: bump on every deploy. The app checks the live index.html for a
 // newer marker whenever it returns to the foreground and reloads itself, so a
 // PWA resumed from the app switcher can never keep running stale code.
-const APP_BUILD='wb-20260718-11';
+const APP_BUILD='wb-20260718-13';
+// ---- startup diagnostics -------------------------------------------------
+// Collects how long each boot phase and each initial query takes, so slow
+// starts can be diagnosed on the device itself. Shown to admins only, in a
+// small panel above the tab bar.
+const PERF={t0:Date.now(), rows:[], listeners:new Set()};
+// Open wios5.netlify.app/?perf=1 in a browser to show the panel on ANY
+// account (handy for checking a teammate's phone). It shows timings only.
+const PERF_FORCE=/[?&]perf=1/.test(location.search);
+function perfMark(name,ms){
+  const i=PERF.rows.findIndex(r=>r.name===name);
+  const row={name,ms:Math.round(ms)};
+  if(i>=0) PERF.rows[i]=row; else PERF.rows.push(row);
+  PERF.listeners.forEach(f=>{ try{f();}catch(e){} });
+}
+function perfTimed(name,promise){
+  const t=Date.now();
+  return promise.then(res=>{ perfMark(name,Date.now()-t); return res; });
+}
+try{
+  const nav=performance.getEntriesByType&&performance.getEntriesByType('navigation')[0];
+  if(nav){ perfMark('download index.html',nav.responseEnd-nav.startTime); }
+}catch(e){}
+perfMark('parse + start scripts', Date.now()-(performance.timeOrigin||PERF.t0));
 
 const PERIOD_TYPES = ['week','month','semester','year'];
 const PLABEL = {week:'Weekly',month:'Monthly',semester:'Semester',year:'Yearly'};
@@ -1014,6 +1055,55 @@ function Login(){
 }
 
 /* ── tasks ───────────────────────────────────────────────── */
+function PerfPanel(){
+  const [,tick]=useState(0);
+  const [open,setOpen]=useState(false);
+  const [hidden,setHidden]=useState(false);
+  useEffect(()=>{
+    const f=()=>tick(x=>x+1);
+    PERF.listeners.add(f);
+    return ()=>PERF.listeners.delete(f);
+  },[]);
+  const [copied,setCopied]=useState(false);
+  if(hidden||!PERF.rows.length) return null;
+  const total=PERF.rows.find(r=>r.name==='app ready');
+  const rows=[...PERF.rows].sort((a,b)=>b.ms-a.ms);
+  const cls=ms=>ms>=800?'bad':ms>=400?'warn':'';
+  function copyReport(){
+    const lines=['WIOS startup report','build '+APP_BUILD, new Date().toLocaleString(),
+      (navigator.userAgent||'').slice(0,80),''].concat(rows.map(r=>r.name+': '+r.ms+' ms'));
+    const txt=lines.join('\n');
+    const done=()=>{ setCopied(true); setTimeout(()=>setCopied(false),1600); };
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(done).catch(()=>window.prompt('Copy this:',txt));
+    } else window.prompt('Copy this:',txt);
+  }
+  return (
+    <div className={'perfpanel'+(open?' open':'')}>
+      <div className="perfbar" onClick={()=>setOpen(o=>!o)}>
+        <span className="pp-title">Startup {total?total.ms+' ms':'\u2026'}</span>
+        <span className="pp-hint">{open?'tap to collapse':'tap for per-query times'}</span>
+        <button className="pp-x" aria-label="Hide diagnostics"
+          onClick={e=>{e.stopPropagation();setHidden(true);}}>{'\u00d7'}</button>
+      </div>
+      {open&&(
+        <div className="perfrows">
+          {rows.map(r=>(
+            <div key={r.name} className="perfrow">
+              <span className="pn">{r.name}</span>
+              <span className={'pv '+cls(r.ms)}>{r.ms} ms</span>
+            </div>
+          ))}
+          <button className="pp-copy" onClick={e=>{e.stopPropagation();copyReport();}}>
+            {copied?'Copied!':'Copy report'}
+          </button>
+          <div className="pp-note">Queries run in parallel: the slowest one sets the pace. Times refresh on every reload. Paste the copied report into chat for analysis.</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TasksTab({me, people, tasks, coops, members, goals, recs, acks, requests, reqTargets, surveys, svTargets, roleProjects, roleMembers, roleItems, reload, openCoopId, setOpenCoopId, gotoGoals}){
   const [seg,setSeg]=useState('active');
   const [slideDir,setSlideDir]=useState(0);   // -1 slide from left, 1 from right, for the swipe feel
@@ -5342,7 +5432,7 @@ function App(){
   },[]);
 
   useEffect(()=>{
-    sb.auth.getSession().then(({data})=>setSession(data.session||null));
+    perfTimed('auth session', sb.auth.getSession()).then(({data})=>setSession(data.session||null));
     const {data:sub}=sb.auth.onAuthStateChange((_e,s)=>setSession(s));
     return ()=>sub.subscription.unsubscribe();
   },[]);
@@ -5351,24 +5441,27 @@ function App(){
     const {data:{user}}=await sb.auth.getUser();
     if(!user) return;
     setBusy(true);
+    const tLoad=Date.now();
     const [pRes,tRes,cRes,mRes,gRes,gpRes,rRes,nRes,reqRes,rtRes,rpRes,rmRes,riRes,svRes,svtRes,ackRes]=await Promise.all([
-      sb.from('wios_profiles').select('*').order('created_at'),
-      sb.from('wios_tasks').select('*').eq('owner_id',user.id),
-      sb.from('wios_coops').select('*').order('created_at',{ascending:false}),
-      sb.from('wios_coop_members').select('*'),
-      sb.from('wios_goals').select('*').eq('owner_id',user.id),
-      sb.from('wios_goal_periods').select('*').eq('user_id',user.id),
-      sb.from('wios_recurrings').select('*').eq('owner_id',user.id).order('time_hhmm'),
-      sb.from('wios_notifications').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(50),
-      sb.from('wios_requests').select('*').order('created_at',{ascending:false}),
-      sb.from('wios_request_targets').select('*'),
-      sb.from('wios_role_projects').select('*').order('created_at',{ascending:false}),
-      sb.from('wios_role_members').select('*'),
-      sb.from('wios_role_items').select('*'),
-      sb.from('wios_surveys').select('*').order('created_at',{ascending:false}),
-      sb.from('wios_survey_targets').select('*'),
-      sb.from('wios_finish_acks').select('*').eq('user_id',user.id),
+      perfTimed('q profiles', sb.from('wios_profiles').select('*').order('created_at')),
+      perfTimed('q tasks', sb.from('wios_tasks').select('*').eq('owner_id',user.id)),
+      perfTimed('q coops', sb.from('wios_coops').select('*').order('created_at',{ascending:false})),
+      perfTimed('q coop members', sb.from('wios_coop_members').select('*')),
+      perfTimed('q goals', sb.from('wios_goals').select('*').eq('owner_id',user.id)),
+      perfTimed('q goal periods', sb.from('wios_goal_periods').select('*').eq('user_id',user.id)),
+      perfTimed('q recurrings', sb.from('wios_recurrings').select('*').eq('owner_id',user.id).order('time_hhmm')),
+      perfTimed('q notifications', sb.from('wios_notifications').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(50)),
+      perfTimed('q requests', sb.from('wios_requests').select('*').order('created_at',{ascending:false})),
+      perfTimed('q request targets', sb.from('wios_request_targets').select('*')),
+      perfTimed('q role projects', sb.from('wios_role_projects').select('*').order('created_at',{ascending:false})),
+      perfTimed('q role members', sb.from('wios_role_members').select('*')),
+      perfTimed('q role items', sb.from('wios_role_items').select('*')),
+      perfTimed('q surveys', sb.from('wios_surveys').select('*').order('created_at',{ascending:false})),
+      perfTimed('q survey targets', sb.from('wios_survey_targets').select('*')),
+      perfTimed('q finish acks', sb.from('wios_finish_acks').select('*').eq('user_id',user.id)),
     ]);
+    perfMark('data load total', Date.now()-tLoad);
+    perfMark('app ready', Date.now()-PERF.t0);
     const all=pRes.data||[];
     const mine=all.find(p=>p.id===user.id);
     if(!mine){ setGate('none'); setBusy(false); return; }
@@ -5569,6 +5662,7 @@ function App(){
         {tab==='team'&&me.is_admin&&<TeamTab me={me} people={people} coops={coops} members={members}/>}
       </div>
 
+      {(me&&me.is_admin||PERF_FORCE)&&<PerfPanel/>}
       <div className="tabbar">
         {tabs.map(t=>(
           <button key={t.k} data-tour={'tab-'+t.k} className={tab===t.k?'on':''} onClick={()=>{
