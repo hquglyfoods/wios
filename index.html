@@ -488,7 +488,11 @@ body.kb-open .askwrap{bottom:calc(var(--kb, 0px) + env(safe-area-inset-bottom) +
 .notemark{color:var(--muted2);display:inline-flex;}
 .notemark svg{width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none;}
 .chip.sub{background:var(--gold-soft);color:var(--gold);}
-.subrow{display:flex;align-items:center;gap:8px;padding:6px 4px;}
+.subrow{display:flex;align-items:center;gap:8px;padding:6px 4px;border-radius:9px;
+  transition:background .15s ease, box-shadow .15s ease, transform .15s ease;}
+.subrow.dragging{background:var(--panel2);box-shadow:0 4px 14px rgba(0,0,0,.14);transform:scale(1.01);}
+.subrow .subgrip{padding:2px 2px 2px 0;margin:0;}
+.subrow .subgrip svg{width:16px;height:16px;}
 .subdone{color:var(--muted);text-decoration:line-through;}
 .gcheck.sm{width:22px;height:22px;font-size:12px;}
 
@@ -546,6 +550,11 @@ body.kb-open .askwrap{bottom:calc(var(--kb, 0px) + env(safe-area-inset-bottom) +
 
 /* coop card inside tasks */
 .coopcard .coopmark{flex:none;width:26px;height:26px;display:flex;align-items:center;justify-content:center;color:var(--gold);}
+.coopmark{position:relative;}
+/* one red dot per card that counts toward the Tasks tab badge:
+   the badge number always equals the number of dotted cards */
+.bdot{position:absolute;top:-2px;right:-3px;width:8px;height:8px;border-radius:50%;
+  background:var(--red);box-shadow:0 0 0 2px var(--panel);}
 .coopcard .coopmark svg{width:20px;height:20px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
 
 /* section header */
@@ -765,7 +774,7 @@ const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 // Build marker: bump on every deploy. The app checks the live index.html for a
 // newer marker whenever it returns to the foreground and reloads itself, so a
 // PWA resumed from the app switcher can never keep running stale code.
-const APP_BUILD='wb-20260718-15';
+const APP_BUILD='wb-20260718-18';
 // ---- startup diagnostics -------------------------------------------------
 // Collects how long each boot phase and each initial query takes, so slow
 // starts can be diagnosed on the device itself. Shown to admins only, in a
@@ -1552,6 +1561,39 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
   function delSub(id){
     persistSubs(dSubs.filter(s=>s.id!==id));
   }
+  // ---- subtask drag-to-reorder (same feel as task cards) ----
+  const [subDragId,setSubDragId]=useState(null);
+  const subDragRef=useRef({id:null,ids:null,before:null});
+  function startSubDrag(id,e){
+    e.preventDefault(); e.stopPropagation();
+    subDragRef.current={id, ids:dSubs.map(x=>x.id), before:dSubs.map(x=>x.id)};
+    setSubDragId(id);
+    window.addEventListener('pointermove', onSubDragMove);
+    window.addEventListener('pointerup', endSubDrag, {once:true});
+  }
+  function onSubDragMove(e){
+    const d=subDragRef.current; if(!d.id) return;
+    const el=document.elementFromPoint(e.clientX, e.clientY);
+    const row=el&&el.closest&&el.closest('.subrow');
+    if(!row||!row.dataset.sid) return;
+    const overId=row.dataset.sid;
+    if(overId===d.id) return;
+    const ids=d.ids.slice();
+    const fi=ids.indexOf(d.id), oi=ids.indexOf(overId);
+    if(fi<0||oi<0) return;
+    ids.splice(fi,1); ids.splice(oi,0,d.id);
+    d.ids=ids;
+    setDSubs(cur=>ids.map(x=>cur.find(sr=>sr.id===x)).filter(Boolean));
+  }
+  function endSubDrag(){
+    window.removeEventListener('pointermove', onSubDragMove);
+    const d=subDragRef.current; subDragRef.current={id:null,ids:null,before:null};
+    setSubDragId(null);
+    if(!d.ids||d.ids.join()===d.before.join()) return;   // nothing moved
+    setDSubs(cur=>{ const next=d.ids.map(x=>cur.find(sr=>sr.id===x)).filter(Boolean);
+      sb.from('wios_tasks').update({subtasks:next}).eq('id',sel.id).then(()=>reload());
+      return next; });
+  }
 
   // ── coop actions (merged into the tasks view) ──
   async function deleteCoopCard(c){
@@ -1574,7 +1616,8 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
       <div className={'card coopcard'+(mineTurn?' turn':'')} onClick={()=>setOpenCoopId(c.id)}>
         <div className="row">
           {mineTurn&&<span className="ball"/>}
-          <span className="coopmark" aria-label="Coop">{ICON.coop}</span>
+          <span className="coopmark" aria-label="Coop">{ICON.coop}
+            {mineTurn&&<span className="bdot"/>}</span>
           <div className="grow">
             <div className="tt">{c.title}</div>
             <div className="meta">
@@ -1791,7 +1834,8 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
     return (
       <div className="card rolecard" onClick={()=>setOpenRoleId(p.id)}>
         <div className="row">
-          <span className="coopmark" aria-label="Role project">{ICON.roles}</span>
+          <span className="coopmark" aria-label="Role project">{ICON.roles}
+            {roleItems.some(it=>it.project_id===p.id&&it.assignee_id===me.id&&!it.approved)&&<span className="bdot"/>}</span>
           <div className="grow">
             <div className="tt">{p.title}</div>
             <div className="meta">
@@ -1823,7 +1867,8 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
     return (
       <div className="card reqcard" onClick={()=>setOpenReqId(r.id)}>
         <div className="row">
-          <span className="coopmark" aria-label="Request">{ICON.request}</span>
+          <span className="coopmark" aria-label="Request">{ICON.request}
+            {!sent&&!finished&&r.status!=='done'&&myT&&(myT.status==='pending'||myT.status==='accepted')&&<span className="bdot"/>}</span>
           <div className="grow">
             <div className="tt">{r.title}</div>
             <div className="meta">
@@ -1855,7 +1900,8 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
     return (
       <div className="card reqcard" onClick={()=>setOpenSurveyId(sv.id)}>
         <div className="row">
-          <span className="coopmark" aria-label="Survey">{ICON.survey}</span>
+          <span className="coopmark" aria-label="Survey">{ICON.survey}
+            {incoming&&<span className="bdot"/>}</span>
           <div className="grow">
             <div className="tt">{sv.title}</div>
             <div className="meta">
@@ -1964,7 +2010,8 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
           <div className="row">
             {canDrag&&<span className="draghandle" aria-label="Drag to reorder"
               onPointerDown={e=>startDrag(t.id,e)} onClick={e=>e.stopPropagation()}>{ICON.grip}</span>}
-            <span className="coopmark" aria-label="Task">{ICON.tasks}</span>
+            <span className="coopmark" aria-label="Task">{ICON.tasks}
+              {t.status==='active'&&t.reminded&&<span className="bdot"/>}</span>
             <div className="grow">
               <div className={'tt'+(t.status==='done'?' done':'')}>{t.title}</div>
               <div className="meta">
@@ -2212,7 +2259,9 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
               )}
               <div className="lbl">Subtasks {dSubs.length>0&&<span style={{color:'var(--gold)'}}>{dSubs.filter(s=>s.done).length}/{dSubs.length}</span>}</div>
               {dSubs.map(s=>(
-                <div key={s.id} className="subrow">
+                <div key={s.id} data-sid={s.id} className={'subrow'+(subDragId===s.id?' dragging':'')}>
+                  <span className="draghandle subgrip" aria-label="Drag to reorder subtask"
+                    onPointerDown={e=>startSubDrag(s.id,e)} onClick={e=>e.stopPropagation()}>{ICON.grip}</span>
                   <button className="ctap" onClick={()=>toggleSub(s.id)} aria-label="Toggle subtask">
                     <span className={'gcheck sm'+(s.done?' on':'')}>✓</span>
                   </button>
@@ -4781,7 +4830,7 @@ function CoachingSheet({me, onClose}){
       <div className="askbar" style={{padding:'10px 12px'}}>
         <textarea rows="1" placeholder={`Talk to your coach, ${firstName}...`} value={q}
           onChange={e=>setQ(e.target.value)}
-          onKeyDown={e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send(); } }}/>
+          onKeyDown={e=>{ if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){ e.preventDefault(); send(); } }}/>
         <button className="btn btn-gold btn-sm" style={{flex:'none',padding:'0 16px'}}
           disabled={busy||!q.trim()} onClick={send}>Send</button>
       </div>
@@ -4874,7 +4923,7 @@ function CeoBriefSheet({me, onClose}){
       <div className="askbar" style={{padding:'10px 12px'}}>
         <textarea rows="1" placeholder="Ask about the team..." value={q}
           onChange={e=>setQ(e.target.value)}
-          onKeyDown={e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send(); } }}/>
+          onKeyDown={e=>{ if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){ e.preventDefault(); send(); } }}/>
         <button className="btn btn-gold btn-sm" style={{flex:'none',padding:'0 16px'}}
           disabled={busy||!q.trim()} onClick={send}>Send</button>
       </div>
@@ -4959,7 +5008,7 @@ function AskTab({me}){
       <div className="askbar">
         <textarea rows="1" placeholder="Ask about your work..." value={q}
           onChange={e=>setQ(e.target.value)}
-          onKeyDown={e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); ask(); } }}/>
+          onKeyDown={e=>{ if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){ e.preventDefault(); ask(); } }}/>
         <button className="btn btn-gold btn-sm" style={{flex:'none',padding:'0 16px'}}
           disabled={busy||!q.trim()} onClick={()=>ask()}>Ask</button>
       </div>
