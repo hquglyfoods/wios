@@ -774,7 +774,7 @@ const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 // Build marker: bump on every deploy. The app checks the live index.html for a
 // newer marker whenever it returns to the foreground and reloads itself, so a
 // PWA resumed from the app switcher can never keep running stale code.
-const APP_BUILD='wb-20260718-18';
+const APP_BUILD='wb-20260718-19';
 // ---- startup diagnostics -------------------------------------------------
 // Collects how long each boot phase and each initial query takes, so slow
 // starts can be diagnosed on the device itself. Shown to admins only, in a
@@ -1540,6 +1540,11 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
     setNewSub('');
     const d=new Date(Date.now()+86400000);
     setSchedAt(`${isoDate(d)}T09:00`);
+    // Opening a followup/reminded task counts as seeing it: clear the flag so
+    // its red dot and the Tasks badge go away.
+    if(t.status==='active'&&t.reminded){
+      sb.from('wios_tasks').update({reminded:false}).eq('id',t.id).then(()=>reload());
+    }
   }
   async function saveNotes(){
     await sb.from('wios_tasks').update({notes:dNotes||null}).eq('id',sel.id);
