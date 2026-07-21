@@ -279,6 +279,28 @@ ROSTER: ${roster}`;
               body: JSON.stringify({ created_by: me.id, target_user_id: target, directive: text }),
             });
           } catch (e) { console.error('directive store failed', e); }
+
+          // Fire the coach right now so the target hears from their coach the
+          // same day, not only next Monday. target=null means everyone active.
+          // This is fire-and-forget: a slow or failed coach call must not break
+          // the CEO's reply. The coach reaches out in its own voice and never
+          // reveals the directive or who prompted it.
+          try {
+            let recipients;
+            if (target) recipients = [target];
+            else {
+              const all = await sb(`wios_profiles?active=eq.true&select=id`);
+              recipients = all.map((p) => p.id).filter((id) => id !== me.id);
+            }
+            const base = (env.URL || env.DEPLOY_PRIME_URL || '').replace(/\/$/, '');
+            await Promise.all(recipients.map((uid) =>
+              fetch(`${base}/.netlify/functions/coach`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-wios-service': env.SUPABASE_SERVICE_KEY },
+                body: JSON.stringify({ action: 'directive-fire', for_user: uid, directive: text }),
+              }).catch((e) => console.error('directive-fire call failed', uid, e.message))
+            ));
+          } catch (e) { console.error('directive-fire dispatch failed', e); }
         }
         answer = answer.replace(dm[0], '').trim();
       }
