@@ -1698,7 +1698,7 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
     const mineTurn=c.holder_id===me.id&&c.status==='active';
     const fresh=isNew(c.id,c.created_at,c.creator_id);
     return (
-      <div className={'card coopcard'+(mineTurn?' turn':'')+(fresh?' isnew':mineTurn?' attn':'')}
+      <div className={'card coopcard'+(mineTurn?' turn':'')+(fresh?' isnew':(mineTurn||finished)?' attn':'')}
         onClick={()=>{markSeen(c.id);setOpenCoopId(c.id);}}>
         <div className="row">
           {mineTurn&&<span className="ball"/>}
@@ -1918,7 +1918,8 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
     const iAcknowledged=myMem&&myMem.status==='acknowledged';
     return (
       <div className={'card rolecard'+(isNew(p.id,p.created_at,p.creator_id)?' isnew'
-          :(roleItems.some(it=>it.project_id===p.id&&it.assignee_id===me.id&&!it.approved)?' attn':''))}
+          :((roleItems.some(it=>it.project_id===p.id&&it.assignee_id===me.id&&!it.approved)
+             ||(everyoneDone&&!iAcknowledged))?' attn':''))}
         onClick={()=>{markSeen(p.id);setOpenRoleId(p.id);}}>
         <div className="row">
           <span className="coopmark" aria-label="Role project">{ICON.roles}</span>
@@ -1951,9 +1952,12 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
     const active=targets.filter(t=>t.status!=='declined');
     const doneN=targets.filter(t=>t.status==='completed').length;
     const myT=targets.find(t=>t.user_id===me.id);
+    // anything the card is waiting on ME for: do it, close it, or confirm it
+    const reqNeedsMe=(!sent&&!finished&&r.status!=='done'&&myT&&(myT.status==='pending'||myT.status==='accepted'))
+      ||(sent&&r.status!=='done'&&active.length>0&&active.every(t=>t.status==='completed'))
+      ||!!finished;
     return (
-      <div className={'card reqcard'+(fresh?' isnew'
-          :(!sent&&!finished&&r.status!=='done'&&myT&&(myT.status==='pending'||myT.status==='accepted')?' attn':''))}
+      <div className={'card reqcard'+(fresh?' isnew':reqNeedsMe?' attn':'')}
         onClick={()=>{markSeen(r.id);setOpenReqId(r.id);}}>
         <div className="row">
           <span className="coopmark" aria-label="Request">{ICON.request}</span>
@@ -1986,8 +1990,11 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
     const svFresh=isNew(sv.id,sv.created_at,sv.creator_id);
     const targets=svTargetsOf(sv.id);
     const doneN=targets.filter(t=>t.status==='answered').length;
+    const svNeedsMe=!!incoming
+      ||(sent&&sv.status!=='done'&&targets.length>0&&targets.every(t=>t.status==='answered'))
+      ||!!finished;
     return (
-      <div className={'card reqcard'+(svFresh?' isnew':incoming?' attn':'')}
+      <div className={'card reqcard'+(svFresh?' isnew':svNeedsMe?' attn':'')}
         onClick={()=>{markSeen(sv.id);setOpenSurveyId(sv.id);}}>
         <div className="row">
           <span className="coopmark" aria-label="Survey">{ICON.survey}</span>
@@ -5712,7 +5719,47 @@ function App(){
   const svIncomingN=useMemo(()=>me?svTargets.filter(t=>t.user_id===me.id&&t.status==='pending'
     &&surveys.some(sv=>sv.id===t.survey_id&&sv.status!=='done')).length:0,[svTargets,surveys,me]);
   const remindedN=useMemo(()=>tasks.filter(t=>t.status==='active'&&t.reminded).length,[tasks]);
-  const coopBadge=myTurn+reqIncomingN+roleIncomingN+svIncomingN;
+  // Shared work that is finished and now waits on ME: confirm it into my Done,
+  // or close it because everyone is finished. These are highlighted on the
+  // cards, so the badge has to count them too (badge == highlighted cards).
+  const ackSetApp=useMemo(()=>new Set((acks||[]).map(a=>a.kind+':'+a.item_id)),[acks]);
+  const confirmN=useMemo(()=>{
+    if(!me) return 0;
+    let n=0;
+    (coops||[]).forEach(c=>{ if(c.status!=='closed') return;
+      const involved=c.creator_id===me.id||members.some(m=>m.coop_id===c.id&&m.user_id===me.id);
+      if(involved&&!ackSetApp.has('coop:'+c.id)) n++; });
+    (requests||[]).forEach(r=>{ if(r.status!=='done') return;
+      const t=reqTargets.find(x=>x.request_id===r.id&&x.user_id===me.id);
+      const involved=r.creator_id===me.id||(t&&t.status!=='declined');
+      if(involved&&!ackSetApp.has('request:'+r.id)) n++; });
+    (surveys||[]).forEach(sv=>{ if(sv.status!=='done') return;
+      const t=svTargets.find(x=>x.survey_id===sv.id&&x.user_id===me.id);
+      const involved=sv.creator_id===me.id||(t&&t.status==='answered');
+      if(involved&&!ackSetApp.has('survey:'+sv.id)) n++; });
+    return n;
+  },[coops,members,requests,reqTargets,surveys,svTargets,ackSetApp,me]);
+  const readyToCloseN=useMemo(()=>{
+    if(!me) return 0;
+    let n=0;
+    (requests||[]).forEach(r=>{ if(r.creator_id!==me.id||r.status==='done') return;
+      const ts=reqTargets.filter(t=>t.request_id===r.id&&t.status!=='declined');
+      if(ts.length&&ts.every(t=>t.status==='completed')) n++; });
+    (surveys||[]).forEach(sv=>{ if(sv.creator_id!==me.id||sv.status==='done') return;
+      const ts=svTargets.filter(t=>t.survey_id===sv.id);
+      if(ts.length&&ts.every(t=>t.status==='answered')) n++; });
+    return n;
+  },[requests,reqTargets,surveys,svTargets,me]);
+  const roleAckN=useMemo(()=>{
+    if(!me) return 0;
+    return (roleProjects||[]).filter(p=>{
+      const mems=roleMembers.filter(m=>m.project_id===p.id);
+      const mine=mems.find(m=>m.user_id===me.id);
+      if(!mine||mine.status==='acknowledged') return false;
+      return mems.length>0&&mems.every(m=>m.status==='completed'||m.status==='acknowledged');
+    }).length;
+  },[roleProjects,roleMembers,me]);
+  const coopBadge=myTurn+reqIncomingN+roleIncomingN+svIncomingN+confirmN+readyToCloseN+roleAckN;
 
   useEffect(()=>{
     const n=coopBadge+remindedN;
