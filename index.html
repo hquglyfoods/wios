@@ -166,12 +166,31 @@ body.kb-open .tabbar{transform:translateX(-50%) translateY(200%);pointer-events:
 /* cards */
 .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:13px 14px;margin-bottom:9px;
   box-shadow:var(--card-shadow);}
+/* actions sit in the card row, so a card with a button is the same height as
+   one without */
+.cardact{flex:none;font-size:11.5px;font-weight:700;padding:8px 12px;border-radius:9px;
+  background:var(--gold);color:#FFFFFF;white-space:nowrap;}
+.cardact:active{filter:brightness(.94);}
+.cardact.line{background:var(--panel2);color:var(--text);border:1px solid var(--border);}
 .card.turn{border-color:var(--gold-line);background:linear-gradient(180deg,rgba(58,110,165,.07),var(--panel));}
 .card.tapme:active{border-color:var(--border2);}
 .row{display:flex;align-items:center;gap:10px;}
 .grow{flex:1;min-width:0;}
 .tt{font-weight:600;font-size:15px;line-height:1.35;overflow-wrap:anywhere;}
-.card.task .tt{overflow-wrap:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* Every card is the same height, whatever it holds: one title line and one
+   meta line, both clipped with an ellipsis instead of wrapping. Detail sheets
+   keep the full 15px wrapping title. */
+.card .tt{font-size:14px;line-height:1.4;display:block;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;word-break:normal;overflow-wrap:normal;}
+.card .meta{flex-wrap:nowrap;overflow:hidden;height:20px;min-height:20px;
+  /* if a row of labels is longer than the card, it fades out instead of being
+     chopped in half, so a tight card still looks finished */
+  -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 20px),transparent);
+  mask-image:linear-gradient(90deg,#000 calc(100% - 20px),transparent);}
+.card .meta .chip{font-size:9.5px;padding:2px 6px;letter-spacing:.04em;}
+/* labels never break inside themselves ("day 2" used to stack as "day"/"2") */
+.card .meta > *{white-space:nowrap;flex:none;}
+.card .meta > .frm{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;}
 .tt.done{color:var(--muted);text-decoration:line-through;}
 .meta{font-size:12px;color:var(--muted);margin-top:5px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;line-height:1.4;}
 .card.task .meta{flex-wrap:nowrap;overflow:hidden;min-height:19px;}
@@ -551,10 +570,25 @@ body.kb-open .askwrap{bottom:calc(var(--kb, 0px) + env(safe-area-inset-bottom) +
 /* coop card inside tasks */
 .coopcard .coopmark{flex:none;width:26px;height:26px;display:flex;align-items:center;justify-content:center;color:var(--gold);}
 .coopmark{position:relative;}
-/* one red dot per card that counts toward the Tasks tab badge:
-   the badge number always equals the number of dotted cards */
-.bdot{position:absolute;top:-2px;right:-3px;width:8px;height:8px;border-radius:50%;
-  background:var(--red);box-shadow:0 0 0 2px var(--panel);}
+/* arrivals no longer need an accept tap, so they announce themselves instead */
+/* cards that carry a sender line hold ONE meta row (the task card already
+   does this): chips keep their size, the name ellipsizes, so marking an item
+   New can never change the card's height. */
+.coopcard .meta,.reqcard .meta{flex-wrap:nowrap;overflow:hidden;min-height:19px;}
+.meta .frm{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.meta .frm-new{color:var(--red);font-weight:800;}
+/* One highlight for "this one needs you": tinted card + thick left bar. Cards
+   that just arrived from someone else additionally get a NEW tab floating in
+   the 9px gap above the card, so nothing in the layout moves. The tint is
+   layered over --panel (same technique as .card.turn) to stay theme-safe.
+   The Tasks tab badge counts exactly the highlighted cards. */
+.card.isnew,.card.attn{background:linear-gradient(180deg,rgba(214,92,78,.10),rgba(214,92,78,.05)),var(--panel);
+  border-color:rgba(214,92,78,.34);
+  box-shadow:inset 4px 0 0 var(--red), var(--card-shadow);
+  position:relative;}
+.card.isnew::after{content:'NEW';position:absolute;top:-7px;left:15px;
+  background:var(--red);color:#FFFFFF;font-size:9.5px;font-weight:800;letter-spacing:.07em;
+  padding:2px 8px;border-radius:6px;box-shadow:0 2px 5px rgba(214,92,78,.40);}
 .coopcard .coopmark svg{width:20px;height:20px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
 
 /* section header */
@@ -774,7 +808,7 @@ const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 // Build marker: bump on every deploy. The app checks the live index.html for a
 // newer marker whenever it returns to the foreground and reloads itself, so a
 // PWA resumed from the app switcher can never keep running stale code.
-const APP_BUILD='wb-20260718-21';
+const APP_BUILD='wb-20260718-23';
 // ---- startup diagnostics -------------------------------------------------
 // Collects how long each boot phase and each initial query takes, so slow
 // starts can be diagnosed on the device itself. Shown to admins only, in a
@@ -874,6 +908,8 @@ function periodLabel(type,key){
 }
 function fmtShort(ts){ if(!ts)return''; const d=new Date(ts);
   return `${MON[d.getMonth()]} ${d.getDate()}, ${d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}`; }
+// cards have one line to work with: date only, no time
+function fmtCard(ts){ return fmtDay(ts); }
 function fmtDay(ts){ if(!ts)return''; const d=new Date(ts); return `${MON[d.getMonth()]} ${d.getDate()}`; }
 function daysAgo(ts){ if(!ts)return 0; return Math.max(0, Math.floor((Date.now()-new Date(ts))/86400000)); }
 function dueSoon(ts){ if(!ts) return false; const ms=new Date(ts)-Date.now(); return ms<=86400000; } // within 24h or overdue
@@ -910,13 +946,18 @@ async function authHeader(){
   const {data:{session}} = await sb.auth.getSession();
   return session ? {'Authorization':'Bearer '+session.access_token} : null;
 }
-async function notifyUsers(to, title, body, coopId){
+async function notifyUsers(to, title, body, coopId, opts){
   try{
     const h=await authHeader();
     if(!h || !to || !to.length) return;
+    const o=opts||{};
     await fetch('/.netlify/functions/notify',{
       method:'POST', headers:{'Content-Type':'application/json',...h},
-      body: JSON.stringify({to:[...new Set(to.filter(Boolean))], title, body: body||'', coopId: coopId||null}),
+      body: JSON.stringify({to:[...new Set(to.filter(Boolean))], title, body: body||'', coopId: coopId||null,
+        // kind drives the in-app feed icon; tag is per item so two different
+        // arrivals both stay in the phone's notification tray instead of the
+        // newer one silently replacing the older (a shared tag overwrites).
+        kind:o.kind||null, tag:o.tag||null}),
     });
   }catch(e){ console.error('notify', e); }
 }
@@ -1187,14 +1228,20 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
   // Requests: no accept step. Anything sent to me is immediately my to-do
   // (Active); sent-by-me is tracked as a card; done keeps the record.
   const reqGroups=useMemo(()=>{
-    const todo=[], sent=[], done=[], finished=[];
+    // sentWaiting: I asked, someone still owes me -> Waiting.
+    // sentReady:   everyone finished, only my close is left -> Active.
+    const todo=[], sentWaiting=[], sentReady=[], done=[], finished=[];
     (requests||[]).forEach(r=>{
       if(hiddenIds.has(r.id)) return;
       const myT=reqTargets.find(t=>t.request_id===r.id&&t.user_id===me.id);
       const iSent=r.creator_id===me.id;
       if(iSent){
         if(r.status==='done'){ (acked('request',r.id)?done:finished).push(r); }
-        else sent.push(r);
+        else {
+          const ts=reqTargets.filter(t=>t.request_id===r.id&&t.status!=='declined');
+          const allDone=ts.length>0&&ts.every(t=>t.status==='completed');
+          (allDone?sentReady:sentWaiting).push(r);
+        }
       } else if(myT){
         if(r.status==='done'){
           // closed by the asker: each participant confirms it into their own Done
@@ -1203,7 +1250,7 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
         // myT.status==='completed' && open: waiting on others, hidden from my Active
       }
     });
-    return {todo,sent,done,finished};
+    return {todo,sentWaiting,sentReady,done,finished};
   },[requests,reqTargets,me.id,hiddenIds,ackSet]);
   const reqTargetsOf=id=>reqTargets.filter(t=>t.request_id===id);
 
@@ -1317,7 +1364,8 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
     coopGroups.mine.forEach(c=>noDate.push({k:'coop',c}));
     coopGroups.theirs.forEach(c=>noDate.push({k:'coop',c}));
     reqGroups.todo.forEach(r=>noDate.push({k:'req',r}));
-    reqGroups.sent.forEach(r=>noDate.push({k:'req',r,sent:true}));
+    reqGroups.sentWaiting.forEach(r=>noDate.push({k:'req',r,sent:true}));
+    reqGroups.sentReady.forEach(r=>noDate.push({k:'req',r,sent:true}));
     svGroups.sentReady.forEach(sv=>noDate.push({k:'sv',sv}));
     svGroups.sentWaiting.forEach(sv=>noDate.push({k:'sv',sv}));
     return {days,noDate,after};
@@ -1526,7 +1574,7 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
         body:`${cLabel(me.id)} brought in ${sendTo.map(cLabel).join(', ')}`});
       hide(t.id);
       await sb.from('wios_tasks').delete().eq('id',t.id);
-      notifyUsers(sendTo, `${cLabel(me.id)} added you to a coop`, t.title, coop.id);
+      notifyUsers(sendTo, `Coop: ${cLabel(me.id)} added you`, t.title, coop.id, {kind:'coop',tag:'coop-'+coop.id});
       setSel(null); setMode('main'); setSendTo([]); setSendMsg('');
       reload();
     }catch(e){ alert(e.message||'Could not send this task.'); }
@@ -1567,6 +1615,37 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
     persistSubs(dSubs.filter(s=>s.id!==id));
   }
   // ---- subtask drag-to-reorder (same feel as task cards) ----
+  // ---- "New" markers for things other people just put on my plate ----
+  const NEW_SEEN_KEY='wios-seen', NEW_SINCE_KEY='wios-seen-since';
+  const [seenIds,setSeenIds]=useState(()=>{
+    try{ return new Set(JSON.parse(localStorage.getItem(NEW_SEEN_KEY)||'[]')); }
+    catch(e){ return new Set(); }
+  });
+  const newSince=useMemo(()=>{
+    try{
+      let v=localStorage.getItem(NEW_SINCE_KEY);
+      if(!v){ v=new Date().toISOString(); localStorage.setItem(NEW_SINCE_KEY,v); }
+      return v;
+    }catch(e){ return new Date().toISOString(); }
+  },[]);
+  function markSeen(id){
+    if(!id||seenIds.has(id)) return;
+    setSeenIds(prev=>{
+      const next=new Set(prev); next.add(id);
+      try{
+        const arr=[...next].slice(-300);        // keep the list small
+        localStorage.setItem(NEW_SEEN_KEY,JSON.stringify(arr));
+      }catch(e){}
+      return next;
+    });
+  }
+  // new = arrived after this device started tracking, from someone else, unopened
+  function isNew(id, createdAt, fromId){
+    if(!id||!createdAt||fromId===me.id) return false;
+    if(seenIds.has(id)) return false;
+    return String(createdAt)>String(newSince);
+  }
+
   const [subDragId,setSubDragId]=useState(null);
   const subDragRef=useRef({id:null,ids:null,before:null});
   function startSubDrag(id,e){
@@ -1617,12 +1696,13 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
 
   function CoopCard({c, finished}){
     const mineTurn=c.holder_id===me.id&&c.status==='active';
+    const fresh=isNew(c.id,c.created_at,c.creator_id);
     return (
-      <div className={'card coopcard'+(mineTurn?' turn':'')} onClick={()=>setOpenCoopId(c.id)}>
+      <div className={'card coopcard'+(mineTurn?' turn':'')+(fresh?' isnew':mineTurn?' attn':'')}
+        onClick={()=>{markSeen(c.id);setOpenCoopId(c.id);}}>
         <div className="row">
           {mineTurn&&<span className="ball"/>}
-          <span className="coopmark" aria-label="Coop">{ICON.coop}
-            {mineTurn&&<span className="bdot"/>}</span>
+          <span className="coopmark" aria-label="Coop">{ICON.coop}</span>
           <div className="grow">
             <div className="tt">{c.title}</div>
             <div className="meta">
@@ -1631,17 +1711,17 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
                 : c.pending_id?<span className="chip wait">Sent to {cLabel(c.pending_id)}</span>
                 : mineTurn?<span className="chip back">Your turn</span>
                 : c.holder_id?<span className="chip wait">With {cLabel(c.holder_id)}</span>:null}
-              <span>from {cLabel(c.creator_id)}</span>
+              <span className={'frm'+(fresh?' frm-new':'')}>{fresh?'New from ':'from '}{cLabel(c.creator_id)}</span>
             </div>
           </div>
+          {finished&&(
+            <button className="cardact" onClick={e=>{e.stopPropagation();ackFinish('coop',c.id);}}>Confirm</button>
+          )}
           {(c.creator_id===me.id||me.is_admin)&&(
             <button className="trash" onClick={e=>{e.stopPropagation();deleteCoopCard(c);}} aria-label="Delete coop">{ICON.trash}</button>
           )}
         </div>
-        {finished&&(
-          <button className="btn btn-gold btn-sm" style={{width:'100%',marginTop:10}}
-            onClick={e=>{e.stopPropagation();ackFinish('coop',c.id);}}>Confirm done</button>
-        )}
+
       </div>
     );
   }
@@ -1748,7 +1828,7 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
         added_by:me.id, approved: mineRole,   // adding to my own role is auto-approved
       });
       if(!mineRole){
-        notifyUsers([assigneeId], `${cLabel(me.id)} added a task to your role`, t, null);
+        notifyUsers([assigneeId], `Role task from ${cLabel(me.id)}`, t, null, {kind:'role',tag:'roleitem-'+p.id});
         await sb.from('wios_role_members').update({status:'working',completed_at:null})
           .eq('project_id',projectId).eq('user_id',assigneeId).eq('status','completed');
       }
@@ -1837,17 +1917,18 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
     const everyoneDone=mems.length>0&&mems.every(m=>m.status==='completed'||m.status==='acknowledged');
     const iAcknowledged=myMem&&myMem.status==='acknowledged';
     return (
-      <div className="card rolecard" onClick={()=>setOpenRoleId(p.id)}>
+      <div className={'card rolecard'+(isNew(p.id,p.created_at,p.creator_id)?' isnew'
+          :(roleItems.some(it=>it.project_id===p.id&&it.assignee_id===me.id&&!it.approved)?' attn':''))}
+        onClick={()=>{markSeen(p.id);setOpenRoleId(p.id);}}>
         <div className="row">
-          <span className="coopmark" aria-label="Role project">{ICON.roles}
-            {roleItems.some(it=>it.project_id===p.id&&it.assignee_id===me.id&&!it.approved)&&<span className="bdot"/>}</span>
+          <span className="coopmark" aria-label="Role project">{ICON.roles}</span>
           <div className="grow">
             <div className="tt">{p.title}</div>
             <div className="meta">
               {iAcknowledged&&<span className="chip ok">Done</span>}
               {!iAcknowledged&&everyoneDone&&<span className="chip ok">Everyone finished</span>}
               <span className="chip sub">{doneMembers}/{mems.length} done</span>
-              {p.due_at&&<span className={'chip due'+(dueSoon(p.due_at)?' urgent':'')}>Due {fmtShort(p.due_at)}</span>}
+              {p.due_at&&<span className={'chip due'+(dueSoon(p.due_at)?' urgent':'')}>Due {fmtCard(p.due_at)}</span>}
               {myPending&&<span className="chip urgent">New for you</span>}
               {!myPending&&!iAcknowledged&&myItems.length>0&&<span>My part {myDone}/{myItems.length}</span>}
             </div>
@@ -1865,82 +1946,87 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
   }
 
   function RequestCard({r, sent, finished}){
+    const fresh=!sent&&isNew(r.id,r.created_at,r.creator_id);
     const targets=reqTargetsOf(r.id);
     const active=targets.filter(t=>t.status!=='declined');
     const doneN=targets.filter(t=>t.status==='completed').length;
     const myT=targets.find(t=>t.user_id===me.id);
     return (
-      <div className="card reqcard" onClick={()=>setOpenReqId(r.id)}>
+      <div className={'card reqcard'+(fresh?' isnew'
+          :(!sent&&!finished&&r.status!=='done'&&myT&&(myT.status==='pending'||myT.status==='accepted')?' attn':''))}
+        onClick={()=>{markSeen(r.id);setOpenReqId(r.id);}}>
         <div className="row">
-          <span className="coopmark" aria-label="Request">{ICON.request}
-            {!sent&&!finished&&r.status!=='done'&&myT&&(myT.status==='pending'||myT.status==='accepted')&&<span className="bdot"/>}</span>
+          <span className="coopmark" aria-label="Request">{ICON.request}</span>
           <div className="grow">
             <div className="tt">{r.title}</div>
             <div className="meta">
               {r.urgent&&r.status!=='done'&&<span className="chip urgent">Urgent</span>}
               {sent?<span className="chip sub">{doneN}/{active.length} done</span>
-                : <span>from {cLabel(r.creator_id)}</span>}
+                : <span className={'frm'+(fresh?' frm-new':'')}>{fresh?'New from ':'from '}{cLabel(r.creator_id)}</span>}
               {r.status==='done'&&<span className="chip ok">Closed</span>}
             </div>
           </div>
+          {sent&&r.status!=='done'&&active.length>0&&active.every(t=>t.status==='completed')&&(
+            <button className="cardact" disabled={busy}
+              onClick={e=>{e.stopPropagation();closeRequest(r);}}>Close</button>
+          )}
+          {finished&&(
+            <button className="cardact" onClick={e=>{e.stopPropagation();ackFinish('request',r.id);}}>Confirm</button>
+          )}
           {((sent&&r.creator_id===me.id)||me.is_admin)&&(
             <button className="trash" onClick={e=>{e.stopPropagation();deleteRequest(r);}} aria-label="Delete request">{ICON.trash}</button>
           )}
         </div>
-        {sent&&r.status!=='done'&&active.length>0&&active.every(t=>t.status==='completed')&&(
-          <button className="btn btn-gold btn-sm" style={{width:'100%',marginTop:10}} disabled={busy}
-            onClick={e=>{e.stopPropagation();closeRequest(r);}}>Everyone is done, close it</button>
-        )}
-        {finished&&(
-          <button className="btn btn-gold btn-sm" style={{width:'100%',marginTop:10}}
-            onClick={e=>{e.stopPropagation();ackFinish('request',r.id);}}>Confirm done</button>
-        )}
+
       </div>
     );
   }
 
   function SurveyCard({sv, incoming, sent, finished}){
+    const svFresh=isNew(sv.id,sv.created_at,sv.creator_id);
     const targets=svTargetsOf(sv.id);
     const doneN=targets.filter(t=>t.status==='answered').length;
     return (
-      <div className="card reqcard" onClick={()=>setOpenSurveyId(sv.id)}>
+      <div className={'card reqcard'+(svFresh?' isnew':incoming?' attn':'')}
+        onClick={()=>{markSeen(sv.id);setOpenSurveyId(sv.id);}}>
         <div className="row">
-          <span className="coopmark" aria-label="Survey">{ICON.survey}
-            {incoming&&<span className="bdot"/>}</span>
+          <span className="coopmark" aria-label="Survey">{ICON.survey}</span>
           <div className="grow">
             <div className="tt">{sv.title}</div>
             <div className="meta">
               {sv.urgent&&sv.status!=='done'&&<span className="chip urgent">Urgent</span>}
-              <span className="chip sub">{(sv.questions||[]).length} question{(sv.questions||[]).length===1?'':'s'}</span>
-              {sent?<span className="chip sub">{doneN}/{targets.length} answered</span>
-                : <span>from {cLabel(sv.creator_id)}</span>}
-              {sent&&sv.status!=='done'&&targets.length>0&&doneN===targets.length&&<span className="chip ok">Everyone completed</span>}
+              <span className="chip sub">{(sv.questions||[]).length}Q</span>
+              {sent?(sv.status!=='done'&&targets.length>0&&doneN===targets.length
+                  ? <span className="chip ok">All answered</span>
+                  : <span className="chip sub">{doneN}/{targets.length} answered</span>)
+                : <span className={'frm'+(svFresh?' frm-new':'')}>{svFresh?'New from ':'from '}{cLabel(sv.creator_id)}</span>}
+
               {sv.status==='done'&&<span className="chip ok">Closed</span>}
             </div>
           </div>
+          {incoming&&(
+            <button className="cardact" disabled={busy}
+              onClick={e=>{e.stopPropagation();markSeen(sv.id);setOpenSurveyId(sv.id);}}>Answer</button>
+          )}
+          {sent&&sv.status!=='done'&&targets.length>0&&targets.every(t=>t.status==='answered')&&(
+            <button className="cardact" disabled={busy}
+              onClick={e=>{e.stopPropagation();closeSurvey(sv);}}>Close</button>
+          )}
+          {finished&&(
+            <button className="cardact" onClick={e=>{e.stopPropagation();ackFinish('survey',sv.id);}}>Confirm</button>
+          )}
           {((sent&&sv.creator_id===me.id)||me.is_admin)&&(
             <button className="trash" onClick={e=>{e.stopPropagation();deleteSurvey(sv);}} aria-label="Delete survey">{ICON.trash}</button>
           )}
         </div>
-        {incoming&&(
-          <button className="btn btn-gold btn-sm" style={{width:'100%',marginTop:12}} disabled={busy}
-            onClick={e=>{e.stopPropagation();setOpenSurveyId(sv.id);}}>Answer</button>
-        )}
-        {sent&&sv.status!=='done'&&targets.length>0&&targets.every(t=>t.status==='answered')&&(
-          <button className="btn btn-gold btn-sm" style={{width:'100%',marginTop:10}} disabled={busy}
-            onClick={e=>{e.stopPropagation();closeSurvey(sv);}}>Everyone answered, close it</button>
-        )}
-        {finished&&(
-          <button className="btn btn-gold btn-sm" style={{width:'100%',marginTop:10}}
-            onClick={e=>{e.stopPropagation();ackFinish('survey',sv.id);}}>Confirm done</button>
-        )}
+
       </div>
     );
   }
 
   const finishedN=coopGroups.finished.length+reqGroups.finished.length+svGroups.finished.length;
-  const activeN=lists.active.length+coopGroups.mine.length+reqGroups.todo.length+svGroups.sentReady.length+finishedN;
-  const waitingN=lists.waiting.length+coopGroups.theirs.length+svGroups.sentWaiting.length;
+  const activeN=lists.active.length+coopGroups.mine.length+reqGroups.todo.length+reqGroups.sentReady.length+svGroups.sentReady.length+finishedN;
+  const waitingN=lists.waiting.length+coopGroups.theirs.length+reqGroups.sentWaiting.length+svGroups.sentWaiting.length;
   const segItems=[
     {k:'active',l:`Active${activeN?` ${activeN}`:''}`, w:1.2},
     {k:'waiting',l:`Waiting${waitingN?` ${waitingN}`:''}`, w:1.2},
@@ -2010,13 +2096,12 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
         const canDrag = seg==='active';
         return (
         <div key={t.id} data-tid={t.id}
-          className={'card task'+(dragging?' dragging':'')}
+          className={'card task'+(dragging?' dragging':'')+(t.status==='active'&&t.reminded?' attn':'')}
           onClick={()=>!dragId&&openSheet(t)}>
           <div className="row">
             {canDrag&&<span className="draghandle" aria-label="Drag to reorder"
               onPointerDown={e=>startDrag(t.id,e)} onClick={e=>e.stopPropagation()}>{ICON.grip}</span>}
-            <span className="coopmark" aria-label="Task">{ICON.tasks}
-              {t.status==='active'&&t.reminded&&<span className="bdot"/>}</span>
+            <span className="coopmark" aria-label="Task">{ICON.tasks}</span>
             <div className="grow">
               <div className={'tt'+(t.status==='done'?' done':'')}>{t.title}</div>
               <div className="meta">
@@ -2031,9 +2116,9 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
                   {ageLabel(t.created_at)}</span>}
                 {t.status==='waiting'&&
                   <span>{daysAgo(t.waiting_since||t.created_at)}d waiting, back {inWords(t.remind_at)}</span>}
-                {t.status==='scheduled'&&<span>Starts {fmtShort(t.scheduled_at)}</span>}
-                {t.due_at&&(t.status==='active')&&<span className={'chip due'+(dueSoon(t.due_at)?' urgent':'')}>Due {fmtShort(t.due_at)}</span>}
-                {t.alarm_at&&!t.alarm_fired&&t.status!=='done'&&<span className="chip alarm"><span className="bellmini">{ICON.bell}</span>{fmtShort(t.alarm_at)}</span>}
+                {t.status==='scheduled'&&<span>Starts {fmtCard(t.scheduled_at)}</span>}
+                {t.due_at&&(t.status==='active')&&<span className={'chip due'+(dueSoon(t.due_at)?' urgent':'')}>Due {fmtCard(t.due_at)}</span>}
+                {t.alarm_at&&!t.alarm_fired&&t.status!=='done'&&<span className="chip alarm"><span className="bellmini">{ICON.bell}</span>{fmtCard(t.alarm_at)}</span>}
                 {t.status==='done'&&<span>Done {fmtDay(t.completed_at)}</span>}
               </div>
             </div>
@@ -2206,9 +2291,10 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
       </>)}
       {seg==='active'&&coopGroups.mine.map(c=><CoopCard key={c.id} c={c}/>)}
       {seg==='active'&&reqGroups.todo.map(r=><RequestCard key={r.id} r={r}/>)}
-      {seg==='active'&&reqGroups.sent.map(r=><RequestCard key={r.id} r={r} sent/>)}
+      {seg==='active'&&reqGroups.sentReady.map(r=><RequestCard key={r.id} r={r} sent/>)}
       {seg==='active'&&svGroups.sentReady.map(sv=><SurveyCard key={sv.id} sv={sv} sent/>)}
       {seg==='active'&&roleGroups.active.map(p=><RoleCard key={p.id} p={p}/>)}
+      {seg==='waiting'&&reqGroups.sentWaiting.map(r=><RequestCard key={r.id} r={r} sent/>)}
       {seg==='waiting'&&coopGroups.theirs.map(c=><CoopCard key={c.id} c={c}/>)}
       {seg==='waiting'&&svGroups.sentWaiting.map(sv=><SurveyCard key={sv.id} sv={sv} sent/>)}
       {seg==='waiting'&&roleGroups.waiting.map(p=><RoleCard key={p.id} p={p}/>)}
@@ -2220,8 +2306,8 @@ function TasksTab({me, people, tasks, coops, members, goals, recs, acks, request
 
       {!calOpen&&!wkOpen&&lists[seg].length===0&&coopGroups.mine.length===0&&coopGroups.theirs.length===0&&
        coopGroups.closed.length===0&&
-       !(seg==='active'&&(reqGroups.todo.length||reqGroups.sent.length||roleGroups.active.length||svGroups.incoming.length||svGroups.sentReady.length||finishedN))&&
-       !(seg==='waiting'&&(roleGroups.waiting.length||svGroups.sentWaiting.length))&&
+       !(seg==='active'&&(reqGroups.todo.length||reqGroups.sentReady.length||roleGroups.active.length||svGroups.incoming.length||svGroups.sentReady.length||finishedN))&&
+       !(seg==='waiting'&&(roleGroups.waiting.length||reqGroups.sentWaiting.length||svGroups.sentWaiting.length))&&
        !(seg==='done'&&(reqGroups.done.length||roleGroups.done.length||svGroups.done.length))&&(
         <div className="empty">
           {seg==='active'&&'Nothing here yet. Tap Task, Coop, or Request to add one.'}
@@ -2539,7 +2625,7 @@ function NewCoopSheet({me, people, onClose, reload}){
       await sb.from('wios_coop_members').insert(rows);
       await sb.from('wios_coop_messages').insert({coop_id:coop.id,user_id:me.id,kind:'system',
         body:`${label(me.id)} started this with ${nTo.map(label).join(', ')}`});
-      notifyUsers(nTo, `${label(me.id)} added you to a coop`, title, coop.id);
+      notifyUsers(nTo, `Coop: ${label(me.id)} added you`, title, coop.id, {kind:'coop',tag:'coop-'+coop.id});
       onClose(); reload();
     }catch(e){ alert(e.message||'Could not create.'); }
     setBusy(false);
@@ -2581,7 +2667,7 @@ function NewRequestSheet({me, people, onClose, reload}){
       // No accept step: the request lands straight in each person's Active.
       const rows=to.map(uid=>({request_id:req.id, user_id:uid, status:'accepted', accepted_at:nowIso()}));
       await sb.from('wios_request_targets').insert(rows);
-      notifyUsers(to, `${label(me.id)} asked you`, t, null);
+      notifyUsers(to, `Request from ${label(me.id)}`, t, null, {kind:'request',tag:'req-'+req.id});
       onClose(); reload();
     }catch(e){ alert(e.message||'Could not send.'); }
     setBusy(false);
@@ -2691,7 +2777,7 @@ function NewSurveySheet({me, people, onClose, reload}){
       if(error) throw error;
       const rows=to.map(uid=>({survey_id:sv.id, user_id:uid, status:'pending'}));
       await sb.from('wios_survey_targets').insert(rows);
-      notifyUsers(to, `${label(me.id)} sent you a survey`, title.trim(), null);
+      notifyUsers(to, `Survey from ${label(me.id)}`, title.trim(), null, {kind:'survey',tag:'sv-'+sv.id});
       onClose(); reload();
     }catch(e){ alert(e.message||'Could not send.'); }
     setBusy(false);
@@ -2865,7 +2951,7 @@ function NewRoleSheet({me, people, onClose, reload}){
       if(error) throw error;
       const ids=Array.from(new Set([me.id, ...team]));
       await sb.from('wios_role_members').insert(ids.map(uid=>({project_id:proj.id, user_id:uid, status:'working'})));
-      notifyUsers(team, `${label(me.id)} started a project`, t, null);
+      notifyUsers(team, `Role project: ${label(me.id)} started one`, t, null, {kind:'role',tag:'role-'+proj.id});
       onClose(); reload();
     }catch(e){ alert(e.message||'Could not create.'); }
     setBusy(false);
@@ -3098,7 +3184,7 @@ function CoopDetail({me, people, coop, members, onClose, reload}){
       }
       await sb.from('wios_coops').update({holder_id:passTo,pending_id:null,last_holder_id:me.id,
         remind_at:remindAt,reminded:false}).eq('id',coop.id);
-      notifyUsers([passTo], `Your turn: ${coop.title}`, msg||`Passed by ${label(me.id)}`, coop.id);
+      notifyUsers([passTo], `Your turn: ${coop.title}`, msg||`Passed by ${label(me.id)}`, coop.id, {kind:'coop',tag:'coop-'+coop.id});
       setPassing(false); setPassTo(null); setPassMsg(''); setPassRemind(0);
       await reload(); loadMsgs();
     }catch(e){ alert(e.message||'Could not pass this on.'); }
@@ -3121,7 +3207,7 @@ function CoopDetail({me, people, coop, members, onClose, reload}){
       }
       await sb.from('wios_coop_messages').insert({coop_id:coop.id,user_id:me.id,kind:'system',
         body:`${label(me.id)} brought in ${addPick.map(label).join(', ')}`});
-      notifyUsers(addPick, `Added to a coop: ${coop.title}`, addMsg||`by ${label(me.id)}`, coop.id);
+      notifyUsers(addPick, `Coop: added to ${coop.title}`, addMsg||`by ${label(me.id)}`, coop.id, {kind:'coop',tag:'coop-'+coop.id});
       setAdding(false); setAddPick([]); setAddMsg('');
       await reload(); loadMsgs();
     }catch(e){ alert(e.message||'Could not add.'); }
@@ -3182,9 +3268,7 @@ function CoopDetail({me, people, coop, members, onClose, reload}){
             <div key={id} className={'player'+(acc?' acc':'')+(pend?' pend':'')}>
               <div className="av">{p.role}</div>
               <div className="nm">{first(p.name)}</div>
-              {pend
-                ? <div className="pendtag">Waiting to accept</div>
-                : <div className="slot">{coop.holder_id===id&&coop.status==='active'&&<span className="ball"/>}</div>}
+              <div className="slot">{coop.holder_id===id&&coop.status==='active'&&<span className="ball"/>}</div>
             </div>
           );
         })}

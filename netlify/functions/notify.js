@@ -52,6 +52,10 @@ exports.handler = async (event) => {
     const body = String(payload.body || '').slice(0, 300);
     const coopId = payload.coopId || null;
     const kind = payload.kind || (coopId ? 'coop' : 'task');
+    // Per-item tag keeps separate arrivals separate in the phone's tray. A
+    // shared tag makes each new push REPLACE the previous one, which is why
+    // several arrivals used to collapse into a single visible notification.
+    const tag = payload.tag || (coopId ? `coop-${coopId}` : `wios-${kind}`);
 
     // in-app notification feed: one row per recipient
     try {
@@ -66,7 +70,7 @@ exports.handler = async (event) => {
 
     const sent = await pushToUsers(to, {
       title, body,
-      tag: payload.tag || 'wios',
+      tag,
       url: coopId ? `/?coop=${coopId}` : '/',
       coopId,
     }, env);
